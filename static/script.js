@@ -2,7 +2,33 @@
 const messagesArea = document.getElementById('messages-area');
 const userInput = document.getElementById('user-input');
 const sendButton = document.getElementById('send-button');
-const resetButton = document.getElementById('reset-button'); // Novo botão de reset
+const resetButton = document.getElementById('reset-button');
+const micIcon = document.getElementById('mic-icon'); 
+
+// --- NOVO: Variável Global para o Histórico ---
+// Este array armazenará o histórico no formato que a API Gemini espera
+let chatHistory = []; 
+
+const initialMessage = "Olá! Eu sou a **Força Feminina**, sua assistente de apoio do **Quebre o Ciclo**. Minha missão é te orientar sobre direitos, leis (como a Lei Maria da Penha) e locais de ajuda. Estou aqui para você. Como posso te ajudar hoje?";
+
+// Função para iniciar o chat com a mensagem da IA e preencher o histórico
+function initializeChat() {
+    // 1. Garante que a mensagem inicial da IA está no chat (se ainda não estiver)
+    if (messagesArea.children.length === 0 || !messagesArea.children[0].classList.contains('ia-message')) {
+        messagesArea.innerHTML = `
+            <div class="message ia-message">
+                <p>${initialMessage}</p>
+            </div>
+        `;
+    }
+    
+    // 2. Preenche o histórico com a mensagem inicial da IA (para que a IA se lembre de quem ela é)
+    chatHistory = [
+        { "role": "model", "parts": [{ "text": initialMessage }] }
+    ];
+    checkInput(); 
+}
+
 
 // Função para adicionar uma nova mensagem à área de chat
 function addMessage(text, sender) {
@@ -13,25 +39,22 @@ function addMessage(text, sender) {
     
     messagesArea.appendChild(messageDiv);
     messagesArea.scrollTop = messagesArea.scrollHeight;
+    
+    // NOVO: Adiciona a mensagem ao histórico global (se não for a mensagem de processamento)
+    if (!text.includes("... (A Força Feminina está a processar)")) {
+        chatHistory.push({
+            "role": sender === 'user' ? 'user' : 'model',
+            "parts": [{ "text": text }]
+        });
+    }
 }
 
-// NOVO: Função para limpar a conversa (Reset)
+// Função para limpar a conversa (Reset)
 function resetChat() {
-    // Remove todas as mensagens, exceto a primeira (boas-vindas da IA)
-    while (messagesArea.children.length > 1) {
-        messagesArea.removeChild(messagesArea.lastChild);
-    }
-    // Restaura a mensagem de boas-vindas se ela foi removida (caso improvável, mas seguro)
-    if (messagesArea.children.length === 0) {
-        messagesArea.innerHTML = `
-            <div class="message ia-message">
-                <p>Olá! Eu sou a **Força Feminina**, sua assistente de apoio do **Quebre o Ciclo**. Minha missão é te orientar sobre direitos, leis (como a Lei Maria da Penha) e locais de ajuda. Estou aqui para você. Como posso te ajudar hoje?</p>
-            </div>
-        `;
-    }
+    messagesArea.innerHTML = ''; // Limpa tudo
+    initializeChat(); // Reinicia com a mensagem de boas-vindas e o histórico
     userInput.value = '';
-    checkInput(); // Redefine o estado do botão
-    messagesArea.scrollTop = 0;
+    checkInput();
     alert("Chat reiniciado. Uma nova conversa foi iniciada.");
 }
 
@@ -39,7 +62,6 @@ function resetChat() {
 function checkInput() {
     sendButton.disabled = userInput.value.trim() === '';
     
-    // Controla o visual
     if (sendButton.disabled) {
         sendButton.style.opacity = 0.5;
         sendButton.style.cursor = 'default';
@@ -48,6 +70,39 @@ function checkInput() {
         sendButton.style.cursor = 'pointer';
     }
 }
+
+// --- NOVO: Função para Reconhecimento de Voz (Speech-to-Text) ---
+function startVoiceRecognition() {
+    if (!('webkitSpeechRecognition' in window)) {
+        alert("Desculpe, seu navegador não suporta o reconhecimento de voz. Por favor, use Chrome ou Edge.");
+        return;
+    }
+
+    const recognition = new webkitSpeechRecognition();
+    recognition.continuous = false; 
+    recognition.lang = 'pt-BR'; 
+    
+    micIcon.style.color = '#ff0000'; 
+    micIcon.classList.add('pulse');
+
+    recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        userInput.value = transcript; 
+        checkInput(); 
+    };
+
+    recognition.onerror = (event) => {
+        console.error("Erro no reconhecimento de voz:", event.error);
+    };
+    
+    recognition.onend = () => {
+        micIcon.style.color = 'var(--brand-color)';
+        micIcon.classList.remove('pulse');
+    };
+
+    recognition.start();
+}
+
 
 // Função que envia a mensagem para o backend Python (Flask)
 async function sendToBackend(userText) {
@@ -62,7 +117,10 @@ async function sendToBackend(userText) {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ message: userText })
+            body: JSON.stringify({ 
+                message: userText,
+                history: chatHistory // NOVO: Envia o histórico completo!
+            })
         });
 
         const data = await response.json();
@@ -70,7 +128,7 @@ async function sendToBackend(userText) {
         // 2. Remove a mensagem de processamento
         messagesArea.removeChild(processingMessage);
 
-        // 3. Adiciona a resposta final do Gemini
+        // 3. Adiciona a resposta final do Gemini (A função addMessage cuidará de adicionar ao histórico)
         addMessage(data.response, 'ia');
         
     } catch (error) {
@@ -93,12 +151,14 @@ function sendMessage() {
     sendToBackend(userText);
     
     userInput.value = '';
-    checkInput(); // Desabilita o botão após o envio
+    checkInput(); 
 }
 
-// Event Listeners
+
+// --- Event Listeners e Inicialização ---
 sendButton.addEventListener('click', sendMessage);
-resetButton.addEventListener('click', resetChat); // Evento para o novo botão de reset
+resetButton.addEventListener('click', resetChat); 
+micIcon.addEventListener('click', startVoiceRecognition); 
 
 userInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') { 
@@ -107,5 +167,5 @@ userInput.addEventListener('keypress', (e) => {
 });
 userInput.addEventListener('input', checkInput); 
 
-// Chame a função uma vez ao carregar para definir o estado inicial
-checkInput();
+// Inicializa o chat quando a página carrega
+document.addEventListener('DOMContentLoaded', initializeChat);
