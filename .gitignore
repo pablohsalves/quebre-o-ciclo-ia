@@ -1,0 +1,15 @@
+# Arquivos e Pastas a serem ignorados pelo Git
+
+# Ambiente Virtual do Python
+venv/
+.venv/
+
+# Arquivos de Configuração Local
+.env
+
+# Cache do Python
+__pycache__/
+*.pyc
+
+# Arquivos do Flask
+*.sqlite3
