@@ -5,12 +5,34 @@ const sendButton = document.getElementById('send-button');
 const resetButton = document.getElementById('reset-button');
 const micWrapper = document.getElementById('mic-wrapper'); 
 const micIcon = document.getElementById('mic-icon'); 
+// NOVO: Referência ao botão de pânico
+const panicButton = document.getElementById('panic-button'); 
 
-// --- Variável Global para o Histórico ---
+// --- Variáveis de Segurança ---
 let chatHistory = []; 
+let activityTimer; // Variável para o temporizador de inatividade
+const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutos em milissegundos
 
-// MENSAGEM INICIAL PADRONIZADA (Jady e Quebre o Ciclo)
 const initialMessage = "Olá! Eu sou a **Jady**, sua assistente de apoio do **Quebre o Ciclo**. Minha missão é te orientar sobre direitos, leis (como a Lei Maria da Penha) e locais de ajuda. Estou aqui para você. Como posso te ajudar hoje?";
+
+// Função de Segurança: Inicia/Reseta o temporizador de inatividade
+function startInactivityTimer() {
+    clearTimeout(activityTimer);
+    activityTimer = setTimeout(clearSensitiveData, INACTIVITY_TIMEOUT_MS);
+}
+
+// Função de Segurança: Limpa dados sensíveis (chamada por inatividade ou pânico)
+function clearSensitiveData() {
+    chatHistory = []; // Apaga o histórico
+    userInput.value = ''; // Limpa o input
+    // Opcional: Para feedback visual imediato (embora o foco do timer seja a segurança em background)
+    // messagesArea.innerHTML = `
+    //     <div class="message ia-message">
+    //         <p>A sessão foi encerrada por inatividade para garantir sua segurança. Por favor, comece uma nova conversa.</p>
+    //     </div>
+    // `;
+    console.log("Dados sensíveis limpos por inatividade.");
+}
 
 // Função para iniciar o chat
 function initializeChat() {
@@ -26,6 +48,7 @@ function initializeChat() {
         { "role": "model", "parts": [{ "text": initialMessage }] }
     ];
     checkInput(); 
+    startInactivityTimer(); // INICIA O TEMPORIZADOR
 }
 
 // Função para adicionar uma nova mensagem
@@ -35,7 +58,6 @@ function addMessage(text, sender) {
     messageDiv.classList.add(sender === 'user' ? 'user-message' : 'ia-message');
     
     if (sender === 'ia') {
-         // Simples substituição para markdown
         const formattedText = text
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
             .replace(/\*(.*?)\*/g, '<em>$1</em>')
@@ -48,13 +70,14 @@ function addMessage(text, sender) {
     messagesArea.appendChild(messageDiv);
     messagesArea.scrollTop = messagesArea.scrollHeight;
     
-    // NOME CORRIGIDO AQUI
     if (!text.includes("... (A Jady está a processar)")) {
         chatHistory.push({
             "role": sender === 'user' ? 'user' : 'model',
             "parts": [{ "text": text }]
         });
     }
+    
+    startInactivityTimer(); // REINICIA O TEMPORIZADOR A CADA MENSAGEM
 }
 
 // Função para limpar a conversa (Reset)
@@ -77,6 +100,7 @@ function checkInput() {
         sendButton.style.opacity = 1.0;
         sendButton.style.cursor = 'pointer';
     }
+    startInactivityTimer(); // REINICIA O TEMPORIZADOR AO DIGITAR/INTERAGIR
 }
 
 // --- Função para Reconhecimento de Voz (Speech-to-Text) ---
@@ -90,7 +114,6 @@ function startVoiceRecognition() {
     recognition.continuous = false; 
     recognition.lang = 'pt-BR'; 
     
-    // Aplica a classe para animação do círculo
     micWrapper.classList.add('recording');
     micIcon.style.color = 'var(--mic-active-color)';
 
@@ -98,8 +121,6 @@ function startVoiceRecognition() {
         const transcript = event.results[0][0].transcript;
         userInput.value = transcript; 
         checkInput(); 
-        
-        // ENVIA A MENSAGEM AUTOMATICAMENTE APÓS A TRANSCRIÇÃO
         sendMessage(); 
     };
 
@@ -109,7 +130,6 @@ function startVoiceRecognition() {
     };
     
     recognition.onend = () => {
-        // Remove a classe de animação e restaura a cor
         micWrapper.classList.remove('recording');
         micIcon.style.color = 'var(--brand-color)';
     };
@@ -120,7 +140,6 @@ function startVoiceRecognition() {
 
 // Função que envia a mensagem para o backend Python (Flask)
 async function sendToBackend(userText) {
-    // 1. Simula o processamento da IA
     addMessage("... (A Jady está a processar)", 'ia'); 
     
     const processingMessage = messagesArea.lastChild; 
@@ -139,10 +158,7 @@ async function sendToBackend(userText) {
 
         const data = await response.json();
         
-        // 2. Remove a mensagem de processamento
         messagesArea.removeChild(processingMessage);
-
-        // 3. Adiciona a resposta final do Gemini
         addMessage(data.response, 'ia');
         
     } catch (error) {
@@ -164,9 +180,17 @@ function sendMessage() {
     addMessage(userText, 'user');
     sendToBackend(userText);
     
-    // Limpa o campo de input *após* o envio (mesmo para voz)
     userInput.value = '';
     checkInput(); 
+}
+
+// NOVO: Função do Botão de Pânico
+function activatePanicMode() {
+    // 1. Limpa o histórico imediatamente
+    clearSensitiveData(); 
+    
+    // 2. Redireciona para uma página neutra
+    window.location.replace("https://www.google.com"); 
 }
 
 
@@ -174,6 +198,8 @@ function sendMessage() {
 sendButton.addEventListener('click', sendMessage);
 resetButton.addEventListener('click', resetChat); 
 micWrapper.addEventListener('click', startVoiceRecognition); 
+// NOVO: Listener para o botão de pânico
+panicButton.addEventListener('click', activatePanicMode); 
 
 userInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') { 
@@ -181,6 +207,12 @@ userInput.addEventListener('keypress', (e) => {
     }
 });
 userInput.addEventListener('input', checkInput); 
+
+// Adiciona listeners para rastrear a atividade e reiniciar o timer (Gatilhos de segurança)
+document.addEventListener('mousemove', startInactivityTimer);
+document.addEventListener('keypress', startInactivityTimer);
+document.addEventListener('touchstart', startInactivityTimer);
+
 
 // Inicializa o chat quando a página carrega
 document.addEventListener('DOMContentLoaded', initializeChat);
