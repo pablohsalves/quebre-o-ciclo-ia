@@ -1,8 +1,8 @@
-// Variáveis para rastrear o histórico de chat e a última mensagem da IA para feedback
+// Variáveis de estado
 let chatHistory = [];
 let lastUserPrompt = "";
 let lastAiResponseText = "";
-// isDarkMode deve ser lida a partir do localStorage na inicialização
+// Lemos o estado salvo do Dark Mode
 let isDarkMode = localStorage.getItem('darkMode') === 'enabled'; 
 
 // --- Elementos DOM ---
@@ -20,7 +20,6 @@ let recognition = null;
 let isListening = false;
 
 if (SpeechRecognition) {
-    // Configurações e eventos de reconhecimento de voz (Mantido) ...
     recognition = new SpeechRecognition();
     recognition.continuous = false; 
     recognition.lang = 'pt-BR'; 
@@ -89,7 +88,6 @@ function addAiFeedbackButtons(messageDiv) {
     feedbackDiv.innerHTML = `<i class="fas fa-thumbs-up" data-feedback="positivo"></i><i class="fas fa-thumbs-down" data-feedback="negativo"></i>`;
     messageDiv.appendChild(feedbackDiv);
 }
-// Funções handleFeedbackClick, sendFeedback e resetChat (mantidas) ...
 function handleFeedbackClick(event) {
     const icon = event.target;
     if (!icon.matches('.feedback-buttons i')) return;
@@ -162,10 +160,14 @@ function resetChat() {
 }
 
 
-// --- Funções UX/Acessibilidade ---
+// --- Funções UX/Acessibilidade (Modo Escuro) ---
 
 // Função auxiliar para aplicar o modo e o ícone
 function applyDarkMode(enable) {
+    // É seguro chamar estas funções mesmo que darkModeToggle seja null por um instante,
+    // mas o listener garantirá que ele existe quando o clique ocorrer.
+    if (!darkModeToggle) return; 
+    
     const icon = darkModeToggle.querySelector('i');
     document.body.classList.toggle('dark-mode', enable);
 
@@ -189,12 +191,13 @@ function handlePanicClick() {
 }
 
 function initializeApp() {
-    // CORREÇÃO: Aplica o modo escuro salvo imediatamente
+    // 1. Aplica o modo escuro salvo imediatamente (antes de listeners)
     applyDarkMode(isDarkMode);
     
-    // Adiciona a mensagem inicial da Jady
+    // 2. Adiciona a mensagem inicial da Jady
     addInitialMessage();
     
+    // 3. Define o foco inicial
     userInput.focus();
 }
 
@@ -206,23 +209,34 @@ function addInitialMessage() {
 
 
 // --- Event Listeners ---
-sendButton.addEventListener('click', sendMessage);
-resetButton.addEventListener('click', resetChat);
-panicButton.addEventListener('click', handlePanicClick);
-darkModeToggle.addEventListener('click', toggleDarkMode);
-messagesArea.addEventListener('click', handleFeedbackClick); 
+// Reforça a adição dos listeners após o DOM estar pronto
+document.addEventListener('DOMContentLoaded', () => {
+    // Funções principais
+    sendButton.addEventListener('click', sendMessage);
+    resetButton.addEventListener('click', resetChat);
+    panicButton.addEventListener('click', handlePanicClick);
+    messagesArea.addEventListener('click', handleFeedbackClick); 
 
-// Listener para o microfone
-if (micWrapper) {
-    micWrapper.addEventListener('click', startListening);
-}
-
-userInput.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
-        event.preventDefault(); 
-        sendMessage();
+    // Listener Crítico do Modo Escuro
+    if (darkModeToggle) {
+        darkModeToggle.addEventListener('click', toggleDarkMode);
+    } else {
+        console.error("Erro: O elemento darkModeToggle não foi encontrado no DOM.");
     }
-});
+    
+    // Listener para o microfone
+    if (micWrapper) {
+        micWrapper.addEventListener('click', startListening);
+    }
+    
+    // Listener do Enter
+    userInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault(); 
+            sendMessage();
+        }
+    });
 
-// Inicializa o app ao carregar
-document.addEventListener('DOMContentLoaded', initializeApp);
+    // Inicializa o app
+    initializeApp();
+});
