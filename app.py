@@ -12,19 +12,48 @@ load_dotenv()
 API_KEY = os.getenv("GEMINI_API_KEY")
 
 # --- Configuração de Segurança e Admin ---
-# A chave secreta é ESSENCIAL para a segurança das sessões do Flask.
-# Em produção (Render), você DEVE definir SECRET_KEY nas variáveis de ambiente.
 SECRET_KEY = os.getenv("SECRET_KEY", "SUA_CHAVE_SECRETA_MUITO_FORTE_AQUI")
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "adminjady")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "quebreociclo123") 
-# ^^^^^^ MUDAR CREDENCIAIS ACIMA ANTES DE FAZER DEPLOY EM PRODUÇÃO! ^^^^^^
+
+# --- Configuração de I/O de Conhecimento ---
+KNOWLEDGE_FILE = "knowledge.txt"
+
+def load_system_instruction():
+    """Carrega a instrução do sistema a partir do arquivo."""
+    try:
+        with open(KNOWLEDGE_FILE, 'r', encoding='utf-8') as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        print(f"⚠️ Arquivo {KNOWLEDGE_FILE} não encontrado. Criando arquivo padrão.")
+        # Instrução padrão se o arquivo não existir
+        default_instruction = (
+            "Você é a Jady, uma assistente de IA do projeto 'Quebre o Ciclo'. Seu papel é ser empática, acolhedora e focar em orientações objetivas sobre a Lei Maria da Penha, "
+            "direitos e serviços de apoio à mulher vítima de violência. Use tom suave, mas assertivo.\n\n"
+            "DIRETRIZES ESSENCIAIS:\n1. EMERGÊNCIA: Ligue 190. 2. Ajuda: Ligue 180."
+        )
+        save_system_instruction(default_instruction)
+        return default_instruction
+
+def save_system_instruction(new_instruction):
+    """Salva a nova instrução no arquivo."""
+    try:
+        with open(KNOWLEDGE_FILE, 'w', encoding='utf-8') as f:
+            f.write(new_instruction.strip())
+        return True
+    except Exception as e:
+        print(f"🚨 ERRO ao salvar instrução: {e}")
+        return False
+
+# CARREGA A INSTRUÇÃO AO INICIAR O APP
+SYSTEM_INSTRUCTION = load_system_instruction()
+
 
 print("--- STATUS DO SERVIDOR ---")
 if API_KEY:
     print("✅ Chave de API Gemini carregada.")
 else:
     print("❌ AVISO CRÍTICO: GEMINI_API_KEY NÃO está carregada. O chat falhará!")
-print(f"🔑 Chave Secreta configurada: {SECRET_KEY[:5]}...")
 print("--------------------------")
 
 
@@ -32,18 +61,6 @@ print("--------------------------")
 app = Flask(__name__)
 app.secret_key = SECRET_KEY # Configura a chave secreta para as sessões
 
-# --- Configuração da Assistente (System Instruction) ---
-SYSTEM_INSTRUCTION = (
-    "Você é a Jady, uma assistente de IA do projeto 'Quebre o Ciclo'. "
-    "Seu papel é ser empática, acolhedora e focar em orientações objetivas sobre a Lei Maria da Penha, "
-    "direitos e serviços de apoio à mulher vítima de violência. Use tom suave, mas assertivo.\n\n"
-    "DIRETRIZES ESSENCIAIS:\n"
-    "1. **Emergência:** SEMPRE priorize e reforce os contatos: **190 (Polícia Militar)** para risco imediato e **180 (Central de Atendimento à Mulher)** para denúncias e informações. NUNCA hesite em sugerir ligar para 190.\n"
-    "2. **Lei Maria da Penha:** Confirme que é a principal ferramenta de proteção (Lei nº 11.340/2006).\n"
-    "3. **Localização (CRAS/Apoio):** Se a usuária pedir ajuda localizada (ex: CRAS, delegacia), oriente a pesquisar no Google Maps 'CRAS [Nome da Cidade]' ou 'Delegacia da Mulher [Nome da Cidade]', pois você não tem acesso em tempo real aos dados municipais. REFORCE que é o melhor caminho.\n"
-    "4. **Formato da Resposta:** Use Markdown para que o texto fique bem formatado no chat web (ex: **negrito** e *listas*).\n"
-    "5. **NÃO Julgue.** Mantenha a confidencialidade e o acolhimento."
-)
 
 @app.route("/")
 def index():
@@ -74,7 +91,8 @@ def chat():
         ]
         
         config = types.GenerateContentConfig(
-            system_instruction=SYSTEM_INSTRUCTION
+            # Usa a variável global que é atualizada ao editar o painel
+            system_instruction=SYSTEM_INSTRUCTION 
         )
         
         response = client.models.generate_content(
@@ -86,6 +104,7 @@ def chat():
         return jsonify({"response": response.text})
 
     except APIError as e:
+        # ... (tratamento de erros, permanece o mesmo) ...
         error_details = str(e)
         if "RESOURCE_EXHAUSTED" in error_details:
             user_friendly_message = "Desculpe, a assistente atingiu o limite de uso no momento. Por favor, tente novamente em alguns minutos. (Erro de cota 429)"
@@ -123,25 +142,38 @@ def admin_login():
     return render_template("admin_login.html", error=error)
 
 
-@app.route("/admin-painel")
+@app.route("/admin-painel", methods=["GET", "POST"])
 def admin_painel():
-    """Área administrativa protegida. Requer login."""
+    """Área administrativa protegida. Lida com a edição do conhecimento."""
     if not session.get('logged_in'):
-        # Se não estiver logado, redireciona para a página de login
         return redirect(url_for('admin_login')) 
+    
+    global SYSTEM_INSTRUCTION
+    message = None
+
+    if request.method == "POST":
+        new_instruction = request.form.get("system_instruction_text")
         
-    # Se estiver logado, exibe o painel
-    return render_template("admin_painel.html")
+        if new_instruction and save_system_instruction(new_instruction):
+            SYSTEM_INSTRUCTION = new_instruction # Atualiza a variável em memória
+            message = "✅ Conhecimento da Jady salvo e atualizado com sucesso!"
+        else:
+            message = "❌ Erro ao salvar o conhecimento. Verifique as permissões do servidor."
+    
+    # Garante que a instrução atual é exibida no formulário
+    current_instruction = SYSTEM_INSTRUCTION 
+    return render_template("admin_painel.html", 
+                           current_instruction=current_instruction,
+                           message=message)
 
 
 @app.route("/admin-logout")
 def admin_logout():
     """Termina a sessão do usuário."""
     session.pop('logged_in', None)
-    return redirect(url_for('index')) # Volta para a página principal
+    return redirect(url_for('index'))
 
 
 if __name__ == "__main__":
     print("Servidor Flask inicializado. Acesse: http://127.0.0.1:5000/")
-    # O debug deve ser FALSE em produção!
     app.run(debug=True)
