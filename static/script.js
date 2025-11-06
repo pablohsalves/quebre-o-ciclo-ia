@@ -11,31 +11,27 @@ const sendButton = document.getElementById('send-button');
 const resetButton = document.getElementById('reset-button');
 const panicButton = document.getElementById('panic-button');
 const darkModeToggle = document.getElementById('dark-mode-toggle');
-// const micWrapper = document.getElementById('mic-wrapper'); // REMOVIDO/DESATIVADO
 
-// --- Funções de Renderização e Lógica do Chat ---
-
+// --- Funções de Renderização e Lógica do Chat (Omitidas para brevidade, mas mantidas as anteriores) ---
 function displayMessage(role, text) {
+    // ... (função displayMessage anterior)
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${role}-message`;
     messageDiv.innerHTML = formatMarkdown(text); 
     messagesArea.appendChild(messageDiv);
     
-    // Rola para a mensagem mais recente
     messagesArea.scrollTop = messagesArea.scrollHeight;
 
     return messageDiv;
 }
-
 function formatMarkdown(text) {
-    // Substituições básicas de Markdown para HTML
+    // ... (função formatMarkdown anterior)
     text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     text = text.replace(/\n/g, '<br>');
-    
     return text;
 }
-
 function addAiFeedbackButtons(messageDiv) {
+    // ... (função addAiFeedbackButtons anterior)
     const feedbackDiv = document.createElement('div');
     feedbackDiv.className = 'feedback-buttons';
     feedbackDiv.innerHTML = `
@@ -44,134 +40,81 @@ function addAiFeedbackButtons(messageDiv) {
     `;
     messageDiv.appendChild(feedbackDiv);
 }
-
 function handleFeedbackClick(event) {
+    // ... (função handleFeedbackClick anterior)
     const icon = event.target;
     if (!icon.matches('.feedback-buttons i')) return;
-
     const feedbackType = icon.dataset.feedback;
-
-    // Impede cliques repetidos
     const feedbackButtons = icon.closest('.feedback-buttons');
     if (feedbackButtons.classList.contains('disabled')) return;
     feedbackButtons.classList.add('disabled');
-
-    // Desativa e altera visualmente os botões
     feedbackButtons.querySelectorAll('i').forEach(i => {
         i.style.color = '#ccc';
         i.style.cursor = 'default';
         i.style.pointerEvents = 'none';
     });
-    
     icon.style.color = feedbackType === 'positivo' ? '#28a745' : '#dc3545';
     icon.style.fontWeight = 'bold';
-
-    // Envia o feedback para o servidor
     sendFeedback(feedbackType);
-
-    // Adiciona uma mensagem de agradecimento
     const thanksMessage = document.createElement('span');
     thanksMessage.textContent = ' Obrigado pelo feedback!';
     thanksMessage.style.marginLeft = '10px';
     thanksMessage.style.fontSize = '0.9em';
     icon.parentNode.parentNode.appendChild(thanksMessage);
 }
-
 function sendFeedback(feedbackType) {
+    // ... (função sendFeedback anterior)
     fetch('/feedback', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            type: feedbackType,
-            user_prompt: lastUserPrompt, 
-            ai_response_text: lastAiResponseText 
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: feedbackType, user_prompt: lastUserPrompt, ai_response_text: lastAiResponseText })
     })
     .then(response => response.json())
-    .then(data => {
-        console.log('Feedback enviado:', data);
-    })
-    .catch(error => {
-        console.error('Erro ao enviar feedback:', error);
-    });
+    .then(data => console.log('Feedback enviado:', data))
+    .catch(error => console.error('Erro ao enviar feedback:', error));
 }
-
-
 async function sendMessage() {
+    // ... (função sendMessage anterior)
     const message = userInput.value.trim();
     if (!message) return;
-
-    // 1. Limpa o input e desativa a interface
     userInput.value = '';
     userInput.disabled = true;
-    sendButton.style.opacity = '0.5'; // Visualmente desativa
-    
-    // 2. Adiciona a mensagem do usuário
+    sendButton.style.opacity = '0.5';
     displayMessage('user', message);
     lastUserPrompt = message;
-
-    // 3. Adiciona a mensagem de 'Digitando...'
     const typingMessage = displayMessage('ai', '<i class="fas fa-ellipsis-h typing-indicator"></i>');
-
-    // 4. Adiciona a mensagem do usuário ao histórico 
     chatHistory.push({ role: "user", parts: [{ text: message }] });
-
     try {
         const response = await fetch('/chat', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ message: message, history: chatHistory })
         });
-
-        if (!response.ok) {
-            throw new Error(`Erro HTTP: ${response.status}`);
-        }
-
+        if (!response.ok) throw new Error(`Erro HTTP: ${response.status}`);
         const data = await response.json();
         const aiResponse = data.response;
-        
-        // 5. Remove a mensagem de 'Digitando...'
         messagesArea.removeChild(typingMessage);
-        
-        // 6. Exibe a resposta real da IA
         const aiMessageDiv = displayMessage('ai', aiResponse);
-        
-        // 7. Atualiza o histórico e feedback
         chatHistory.push({ role: "model", parts: [{ text: aiResponse }] });
         lastAiResponseText = aiResponse;
-
-        // 8. Adiciona botões de feedback 
         addAiFeedbackButtons(aiMessageDiv);
-        
     } catch (error) {
         console.error('Erro ao comunicar com o servidor:', error);
-        
-        // 9. Remove a mensagem de 'Digitando...' e exibe erro
         messagesArea.removeChild(typingMessage);
-        
-        // CORREÇÃO: Exibe a mensagem de erro SEM botões de feedback, para não ser enviado
         displayMessage('ai', 'Desculpe, não consegui me conectar ao servidor. Por favor, tente novamente ou ligue 190.');
-
     } finally {
-        // 10. Reativa a interface
         userInput.disabled = false;
         sendButton.style.opacity = '1';
         userInput.focus();
     }
 }
-
 function resetChat() {
+    // ... (função resetChat anterior)
     if (confirm('Tem certeza que deseja começar uma nova conversa? O histórico será perdido.')) {
         chatHistory = [];
         messagesArea.innerHTML = '';
         lastUserPrompt = "";
         lastAiResponseText = "";
-        
-        // Reinicia com a mensagem de boas-vindas
         addInitialMessage(); 
     }
 }
@@ -183,10 +126,15 @@ function toggleDarkMode() {
     document.body.classList.toggle('dark-mode', isDarkMode);
     localStorage.setItem('darkMode', isDarkMode ? 'enabled' : 'disabled');
 
-    // Altera o ícone
+    // CORREÇÃO: Altera o ícone corretamente
     const icon = darkModeToggle.querySelector('i');
-    icon.classList.toggle('fa-moon', !isDarkMode);
-    icon.classList.toggle('fa-sun', isDarkMode);
+    if (isDarkMode) {
+        icon.classList.remove('fa-moon');
+        icon.classList.add('fa-sun');
+    } else {
+        icon.classList.remove('fa-sun');
+        icon.classList.add('fa-moon');
+    }
 }
 
 function handlePanicClick() {
@@ -197,9 +145,10 @@ function initializeApp() {
     // 1. Aplica o Modo Escuro se estiver salvo
     if (isDarkMode) {
         document.body.classList.add('dark-mode');
+        // CORREÇÃO: Aplica o ícone correto na inicialização
         const icon = darkModeToggle.querySelector('i');
-        icon.classList.add('fa-sun');
         icon.classList.remove('fa-moon');
+        icon.classList.add('fa-sun');
     }
     
     // 2. Adiciona a mensagem inicial da Jady
@@ -210,7 +159,6 @@ function initializeApp() {
 }
 
 function addInitialMessage() {
-    // Mensagem de boas-vindas (deve ser a mesma que o modelo retorna inicialmente)
     const welcomeMessage = "Olá! Eu sou a **Jady**, sua assistente de apoio do **Quebre o Ciclo**. Minha missão é te orientar sobre direitos, leis (como a Lei Maria da Penha) e locais de ajuda. Estou aqui para você. Como posso te ajudar hoje?";
     displayMessage('ai', welcomeMessage);
     
@@ -227,7 +175,7 @@ messagesArea.addEventListener('click', handleFeedbackClick);
 
 userInput.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {
-        event.preventDefault(); // Impede quebra de linha
+        event.preventDefault(); 
         sendMessage();
     }
 });

@@ -8,6 +8,12 @@ body {
     padding-bottom: 120px; 
 }
 
+/* Garante que o body não tem margem no mobile para evitar barra de rolagem */
+body, html {
+    margin: 0;
+    padding: 0;
+}
+
 #chat-container {
     max-width: 800px;
     margin: 30px auto;
@@ -16,10 +22,11 @@ body {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column;
-    min-height: calc(100vh - 60px); 
+    /* Fixa a altura do chat container com base no footer fixo */
+    min-height: calc(100vh - 150px); 
     max-height: 900px;
-    overflow: hidden; 
     position: relative; 
+    overflow: hidden;
 }
 
 /* --- Área de Mensagens --- */
@@ -30,6 +37,8 @@ body {
     scroll-behavior: smooth;
     min-height: 400px; 
     position: relative;
+    /* CORREÇÃO: Dá um padding-bottom extra para que a última mensagem não fique escondida atrás do footer */
+    padding-bottom: 20px; 
 }
 
 /* Botão de Reset */
@@ -71,7 +80,7 @@ body {
     border-bottom-left-radius: 0;
 }
 
-/* --- Área de Input Fixa (Footer) - CORREÇÃO CRÍTICA DO LAYOUT UNIFICADO --- */
+/* --- Área de Input Fixa (Footer) --- */
 
 #footer-fixed-container {
     position: fixed;
@@ -81,17 +90,18 @@ body {
     width: 100%;
     max-width: 800px; 
     background: #ffffff;
-    padding: 10px 20px 0; /* Padding superior, lateral corrigido no desktop */
+    padding: 10px 20px 0; 
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
     border-top-left-radius: 12px;
     border-top-right-radius: 12px;
+    z-index: 50; /* Garante que fique acima da área de mensagens */
 }
 
-/* O #input-area é o wrapper principal arredondado, sem padding extra */
+/* O #input-area é o wrapper principal arredondado, UNIFICADO */
 #input-area {
     display: flex; 
     align-items: center;
-    padding: 5px; /* Padding interno para o conteúdo (input, mic, send) */
+    padding: 5px; 
     background-color: #f8f9fa; 
     border: 1px solid #ced4da;
     border-radius: 25px; 
@@ -117,7 +127,8 @@ body {
 
 /* Microfone */
 #mic-wrapper {
-    padding: 0 10px;
+    /* CORREÇÃO: Aumenta o padding à direita para afastar do botão de envio */
+    padding: 0 15px 0 10px; 
     display: flex;
     align-items: center;
     cursor: pointer;
@@ -126,7 +137,7 @@ body {
     flex-shrink: 0;
 }
 
-/* Botão de Envio (Circular e Integrado no wrapper) */
+/* Botão de Envio */
 #send-button {
     background-color: #ff69b4;
     color: white;
@@ -140,7 +151,7 @@ body {
     font-size: 0.9em;
     flex-shrink: 0;
     transition: background-color 0.3s, transform 0.1s;
-    margin-right: 5px; /* Espaço após o botão, dentro do padding de 5px */
+    margin-right: 5px; 
 }
 
 #send-button:active {
@@ -192,7 +203,7 @@ body {
     z-index: 99;
 }
 
-/* --- Estilos do Modo Escuro (DARK MODE) (Mantido) --- */
+/* --- Estilos do Modo Escuro (DARK MODE) - CORREÇÃO CRÍTICA AQUI --- */
 body.dark-mode {
     background-color: #121212; 
     color: #f1f1f1; 
@@ -210,53 +221,46 @@ body.dark-mode #input-area {
 body.dark-mode #user-input {
     color: #f1f1f1;
 }
+body.dark-mode .ai-message {
+    background-color: #333333; 
+    color: #f1f1f1;
+}
 body.dark-mode #reset-button {
     background-color: rgba(30, 30, 30, 0.8);
+    color: #ff69b4;
 }
 body.dark-mode #disclaimer-bottom {
     color: #aaaaaa;
 }
+body.dark-mode #dark-mode-toggle {
+    background-color: #f1f1f1;
+    color: #1e1e1e;
+}
+body.dark-mode #panic-button {
+    color: white; /* Garante que o X continue branco */
+}
 
 
-/* --- Correção Responsiva (Mobile) - CORREÇÃO DA LARGURA E CORTE --- */
+/* --- Correção Responsiva (Mobile) --- */
 @media (max-width: 850px) {
-    body {
-        padding: 0;
-        margin: 0;
-        height: 100vh; 
-        overflow: hidden; 
-        padding-bottom: 120px; 
-    }
-    
+    /* CORREÇÃO: Garante que o chat container comece no topo e termine no footer */
     #chat-container {
-        width: 100%;
-        max-width: none;
-        border-radius: 0;
-        box-shadow: none;
         margin: 0; 
-        height: 100%; 
         min-height: calc(100vh - 120px); 
     }
 
-    #messages-area {
-         padding: 15px 10px;
-    }
-
     #footer-fixed-container {
-        max-width: 100%; 
-        left: 0; 
-        transform: translateX(0);
-        border-radius: 0; 
-        /* REMOÇÃO CRÍTICA: Remove padding lateral no footer para que o #input-area use a largura total */
+        /* CORREÇÃO: Zera a margem lateral para que o #input-area possa ter margem interna */
         padding: 10px 0 0; 
+        border-radius: 0;
     }
     
     #input-area {
-        /* Adiciona a margem lateral AQUI para o input-area, garantindo que não seja cortado nas bordas da tela */
+        /* Adiciona a margem/padding lateral AQUI para o wrapper */
         margin: 0 10px 5px 10px; 
     }
 
-    /* Ajuste fino dos botões flutuantes para mobile */
+    /* Botões flutuantes para mobile (mantido) */
     #panic-button {
         top: 10px; 
         right: 10px;
@@ -266,7 +270,7 @@ body.dark-mode #disclaimer-bottom {
     }
     
     #dark-mode-toggle {
-        top: 60px; /* Abaixo do botão de pânico */
+        top: 60px; 
         right: 10px;
         width: 40px;
         height: 40px;
@@ -274,6 +278,6 @@ body.dark-mode #disclaimer-bottom {
     }
     
     #disclaimer-bottom {
-        padding: 5px 10px 10px; /* Ajusta o padding do disclaimer para não encostar na borda */
+        padding: 5px 10px 10px; 
     }
 }
