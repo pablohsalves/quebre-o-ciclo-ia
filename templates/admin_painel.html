@@ -129,6 +129,17 @@
         
         <textarea name="logs_content" class="logs-area" readonly>{{ logs_content }}</textarea>
 
+        <h2>3. Feedback de Respostas (feedback.txt)</h2>
+        
+        <div class="logs-actions">
+            <form method="POST" onsubmit="return confirm('Tem certeza que deseja RESETAR o feedback? Esta ação é irreversível.')">
+                <input type="hidden" name="reset_feedback" value="1">
+                <button type="submit" class="reset-button">Resetar Feedback</button>
+            </form>
+        </div>
+        
+        <textarea name="feedback_content" class="logs-area" readonly>{{ feedback_content }}</textarea>
+
 
     </div>
 </body>

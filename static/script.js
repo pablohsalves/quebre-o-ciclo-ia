@@ -5,13 +5,15 @@ const sendButton = document.getElementById('send-button');
 const resetButton = document.getElementById('reset-button');
 const micWrapper = document.getElementById('mic-wrapper'); 
 const micIcon = document.getElementById('mic-icon'); 
-// NOVO: Referência ao botão de pânico
 const panicButton = document.getElementById('panic-button'); 
 
 // --- Variáveis de Segurança ---
 let chatHistory = []; 
-let activityTimer; // Variável para o temporizador de inatividade
+let activityTimer; 
 const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutos em milissegundos
+// Variável para armazenar a resposta da IA atual para o feedback
+let currentAIResponseData = null; 
+
 
 const initialMessage = "Olá! Eu sou a **Jady**, sua assistente de apoio do **Quebre o Ciclo**. Minha missão é te orientar sobre direitos, leis (como a Lei Maria da Penha) e locais de ajuda. Estou aqui para você. Como posso te ajudar hoje?";
 
@@ -21,16 +23,10 @@ function startInactivityTimer() {
     activityTimer = setTimeout(clearSensitiveData, INACTIVITY_TIMEOUT_MS);
 }
 
-// Função de Segurança: Limpa dados sensíveis (chamada por inatividade ou pânico)
+// Função de Segurança: Limpa dados sensíveis
 function clearSensitiveData() {
-    chatHistory = []; // Apaga o histórico
-    userInput.value = ''; // Limpa o input
-    // Opcional: Para feedback visual imediato (embora o foco do timer seja a segurança em background)
-    // messagesArea.innerHTML = `
-    //     <div class="message ia-message">
-    //         <p>A sessão foi encerrada por inatividade para garantir sua segurança. Por favor, comece uma nova conversa.</p>
-    //     </div>
-    // `;
+    chatHistory = []; 
+    userInput.value = ''; 
     console.log("Dados sensíveis limpos por inatividade.");
 }
 
@@ -48,13 +44,29 @@ function initializeChat() {
         { "role": "model", "parts": [{ "text": initialMessage }] }
     ];
     checkInput(); 
-    startInactivityTimer(); // INICIA O TEMPORIZADOR
+    startInactivityTimer(); 
 }
 
 // Função para adicionar uma nova mensagem
-function addMessage(text, sender) {
+function addMessage(text, sender, isTypingIndicator = false) {
     const messageDiv = document.createElement('div');
     messageDiv.classList.add('message');
+    
+    if (isTypingIndicator) {
+        // NOVO: Adiciona a estrutura para o Typing Indicator
+        messageDiv.classList.add('typing-indicator');
+        messageDiv.innerHTML = `
+            <span></span>
+            <span></span>
+            <span></span>
+        `;
+        messageDiv.removeAttribute('class'); // Remove a classe 'message'
+        messageDiv.classList.add('typing-indicator'); // Adiciona a classe correta
+        messagesArea.appendChild(messageDiv);
+        messagesArea.scrollTop = messagesArea.scrollHeight;
+        return messageDiv; // Retorna o elemento para que possa ser removido depois
+    }
+    
     messageDiv.classList.add(sender === 'user' ? 'user-message' : 'ia-message');
     
     if (sender === 'ia') {
@@ -62,7 +74,25 @@ function addMessage(text, sender) {
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
             .replace(/\*(.*?)\*/g, '<em>$1</em>')
             .replace(/\n/g, '<br>');
-        messageDiv.innerHTML = `<p>${formattedText}</p>`;
+            
+        // Adiciona a resposta e o container de feedback
+        messageDiv.innerHTML = `
+            <p>${formattedText}</p>
+            <div class="feedback-container" data-response-text="${text}">
+                <i class="fas fa-thumbs-up feedback-icon like" title="Resposta útil"></i>
+                <i class="fas fa-thumbs-down feedback-icon dislike" title="Resposta inútil"></i>
+                <span class="feedback-message">Obrigado pelo feedback!</span>
+            </div>
+        `;
+        
+        // Adiciona listeners para os novos ícones de feedback
+        const likeIcon = messageDiv.querySelector('.like');
+        const dislikeIcon = messageDiv.querySelector('.dislike');
+        
+        // Passa o objeto de dados da resposta para os manipuladores
+        likeIcon.addEventListener('click', (e) => handleFeedback(e, 'like', currentAIResponseData));
+        dislikeIcon.addEventListener('click', (e) => handleFeedback(e, 'dislike', currentAIResponseData));
+        
     } else {
         messageDiv.innerHTML = `<p>${text}</p>`;
     }
@@ -70,15 +100,58 @@ function addMessage(text, sender) {
     messagesArea.appendChild(messageDiv);
     messagesArea.scrollTop = messagesArea.scrollHeight;
     
-    if (!text.includes("... (A Jady está a processar)")) {
+    if (sender !== 'typing-indicator') {
+        // Só adiciona ao histórico se não for o typing indicator
         chatHistory.push({
             "role": sender === 'user' ? 'user' : 'model',
             "parts": [{ "text": text }]
         });
     }
     
-    startInactivityTimer(); // REINICIA O TEMPORIZADOR A CADA MENSAGEM
+    startInactivityTimer(); 
 }
+
+// Função para manipular o clique no feedback
+async function handleFeedback(event, type, responseData) {
+    const icon = event.currentTarget;
+    const container = icon.closest('.feedback-container');
+    const messageSpan = container.querySelector('.feedback-message');
+    
+    // Evita o reenvio de feedback
+    if (icon.classList.contains('selected')) {
+        return;
+    }
+    
+    // Desseleciona e remove a classe 'selected' de ambos os ícones
+    container.querySelectorAll('.feedback-icon').forEach(i => {
+        i.classList.remove('selected');
+        i.style.color = '#a0a0a0'; // Volta à cor padrão
+    });
+    
+    // Seleciona o ícone clicado
+    icon.classList.add('selected');
+
+    // Mostra a mensagem de agradecimento
+    messageSpan.style.display = 'inline';
+    
+    // Envia o feedback para o backend
+    try {
+        await fetch('/feedback', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                type: type,
+                user_prompt: responseData.user_prompt,
+                ai_response_text: responseData.ai_response_text
+            })
+        });
+    } catch (error) {
+        console.error('Erro ao enviar feedback para o backend:', error);
+    }
+}
+
 
 // Função para limpar a conversa (Reset)
 function resetChat() {
@@ -100,7 +173,7 @@ function checkInput() {
         sendButton.style.opacity = 1.0;
         sendButton.style.cursor = 'pointer';
     }
-    startInactivityTimer(); // REINICIA O TEMPORIZADOR AO DIGITAR/INTERAGIR
+    startInactivityTimer(); 
 }
 
 // --- Função para Reconhecimento de Voz (Speech-to-Text) ---
@@ -140,9 +213,11 @@ function startVoiceRecognition() {
 
 // Função que envia a mensagem para o backend Python (Flask)
 async function sendToBackend(userText) {
-    addMessage("... (A Jady está a processar)", 'ia'); 
+    // NOVO: 1. Adiciona o indicador de digitação
+    const typingIndicator = addMessage(null, 'typing-indicator', true);
     
-    const processingMessage = messagesArea.lastChild; 
+    // Limpa a variável de dados de feedback antes de uma nova resposta
+    currentAIResponseData = null;
     
     try {
         const response = await fetch('/chat', {
@@ -158,12 +233,24 @@ async function sendToBackend(userText) {
 
         const data = await response.json();
         
-        messagesArea.removeChild(processingMessage);
+        // 2. Remove o indicador de digitação
+        messagesArea.removeChild(typingIndicator);
+
+        // 3. Salva os dados completos para uso no feedback
+        currentAIResponseData = {
+            user_prompt: data.user_prompt,
+            ai_response_text: data.ai_response_text
+        };
+        
+        // 4. Adiciona a resposta final do Gemini com os botões de feedback
         addMessage(data.response, 'ia');
         
     } catch (error) {
         console.error('Erro na comunicação com o backend:', error);
-        messagesArea.removeChild(processingMessage); 
+        // Tenta remover o indicador mesmo em caso de erro
+        if (typingIndicator && messagesArea.contains(typingIndicator)) {
+            messagesArea.removeChild(typingIndicator);
+        }
         addMessage("Desculpe, não consegui me conectar ao servidor. Por favor, tente novamente.", 'ia');
     }
 }
@@ -184,12 +271,9 @@ function sendMessage() {
     checkInput(); 
 }
 
-// NOVO: Função do Botão de Pânico
+// Função do Botão de Pânico
 function activatePanicMode() {
-    // 1. Limpa o histórico imediatamente
     clearSensitiveData(); 
-    
-    // 2. Redireciona para uma página neutra
     window.location.replace("https://www.google.com"); 
 }
 
@@ -198,7 +282,6 @@ function activatePanicMode() {
 sendButton.addEventListener('click', sendMessage);
 resetButton.addEventListener('click', resetChat); 
 micWrapper.addEventListener('click', startVoiceRecognition); 
-// NOVO: Listener para o botão de pânico
 panicButton.addEventListener('click', activatePanicMode); 
 
 userInput.addEventListener('keypress', (e) => {
