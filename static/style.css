@@ -1,111 +1,32 @@
-/* Paleta de Cores Light Mode Acolhedor */
-:root {
-    --bg-light: #fffafa; 
-    --text-dark: #1f1f1f;
-    --brand-color: #ff69b4; 
-    --ia-bubble: #f1f0f0; 
-    --user-bubble: #ffbcd9; 
-    --input-bg: #ffffff;
-    --border-color: #e0e0e0;
-    --mic-active-color: #ff0000; 
-    --footer-height: 100px; 
-    
-    /* Variáveis do Dark Mode */
-    --dark-bg: #1c1c1c;
-    --dark-text-light: #e0e0e0;
-    --dark-ia-bubble: #343a40;
-    --dark-user-bubble: #6b2d4b;
-    --dark-input-bg: #2a2a2a;
-    --dark-border-color: #444;
-}
-
-/* --- Dark Mode Styles --- */
-body.dark-mode {
-    background-color: var(--dark-bg); 
-    color: var(--dark-text-light);
-}
-
-body.dark-mode #chat-container {
-    background-color: #242424;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5); 
-}
-
-body.dark-mode .ia-message {
-    background-color: var(--dark-ia-bubble); 
-    color: var(--dark-text-light);
-}
-
-body.dark-mode .user-message {
-    background-color: var(--dark-user-bubble); 
-    color: var(--dark-text-light); 
-}
-
-body.dark-mode #footer-fixed-container {
-    background-color: var(--dark-bg);
-}
-
-body.dark-mode #input-box-wrapper {
-    background-color: var(--dark-input-bg);
-    border-color: var(--dark-border-color);
-}
-
-body.dark-mode #user-input {
-    color: var(--dark-text-light);
-}
-
-body.dark-mode #user-input::placeholder {
-    color: #888;
-}
-
-body.dark-mode #disclaimer-bottom {
-    color: #999; 
-}
-
-body.dark-mode #reset-button {
-    color: #888;
-}
-body.dark-mode #reset-button:hover {
-    color: var(--brand-color);
-}
-
+/* --- Estilos Globais e do Chat --- */
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: var(--bg-light); 
-    color: var(--text-dark);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding-bottom: var(--footer-height); 
-    min-height: 100vh;
-    margin: 0;
+    font-family: 'Arial', sans-serif;
+    background-color: #e9ecef; /* Cor de fundo padrão (claro) */
+    color: #343a40; /* Cor do texto padrão */
+    transition: background-color 0.3s, color 0.3s;
+    padding-bottom: 120px; /* Espaço para a área de input fixa */
 }
 
 #chat-container {
-    width: 100%;
-    max-width: 800px; 
-    height: calc(100vh - var(--footer-height) - 40px); 
-    flex-grow: 0; 
-    
-    background-color: #ffffff;
+    max-width: 800px;
+    margin: 30px auto;
+    background: #ffffff;
     border-radius: 12px;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08); 
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column;
-    overflow: hidden;
-    margin-top: 20px; 
+    height: calc(100vh - 60px); /* 100% da altura da viewport menos margens */
+    max-height: 900px;
+    overflow: hidden; /* Garante que o conteúdo não vaze */
 }
 
-/* Área de Mensagens */
+/* --- Área de Mensagens --- */
 #messages-area {
-    flex-grow: 1;
-    padding: 20px;
-    overflow-y: auto;
-    position: relative; 
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-#messages-area::-webkit-scrollbar {
-    display: none;
+    flex-grow: 1; /* Ocupa o espaço restante */
+    padding: 15px 20px;
+    overflow-y: auto; /* Scroll para mensagens */
+    scroll-behavior: smooth;
+    position: relative;
 }
 
 /* Botão de Reset */
@@ -113,314 +34,233 @@ body {
     position: sticky;
     top: 10px;
     right: 10px;
-    float: right; 
-    color: #a0a0a0;
+    float: right;
+    color: #ff69b4;
     cursor: pointer;
-    font-size: 1.1em;
-    z-index: 10;
+    font-size: 1.2em;
     padding: 5px;
+    z-index: 10;
+    background-color: rgba(255, 255, 255, 0.8);
     border-radius: 50%;
-    transition: color 0.2s;
-}
-#reset-button:hover {
-    color: var(--brand-color);
 }
 
-/* Estilo Base das Mensagens */
+/* --- Estilos das Mensagens --- */
 .message {
-    padding: 15px 20px;
     margin-bottom: 15px;
-    max-width: 75%;
-    word-wrap: break-word;
-    border-radius: 20px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-.ia-message {
-    background-color: var(--ia-bubble); 
-    color: var(--text-dark);
-    border-radius: 20px 20px 20px 4px;
-    margin-right: auto;
-}
-.user-message {
-    background-color: var(--user-bubble); 
-    color: var(--text-dark); 
-    border-radius: 20px 20px 4px 20px;
-    margin-left: auto;
+    padding: 10px 15px;
+    border-radius: 8px;
+    max-width: 85%;
+    line-height: 1.5;
 }
 
-/* --- Área de Rodapé FIXA (Input + Disclaimer) --- */
+/* Mensagens do Usuário */
+.user-message {
+    background-color: #ff69b4; /* Rosa */
+    color: white;
+    margin-left: auto;
+    text-align: right;
+    border-bottom-right-radius: 0;
+}
+
+/* Mensagens da Jady */
+.ai-message {
+    background-color: #f1f3f5; /* Cinza claro */
+    color: #343a40;
+    margin-right: auto;
+    text-align: left;
+    border-bottom-left-radius: 0;
+}
+
+/* Título e Descrição dos Recursos */
+.ai-message h3 {
+    color: #007bff;
+    margin-top: 0;
+    font-size: 1.1em;
+}
+
+/* Estilo para contatos (dentro da mensagem da Jady) */
+.resource-contact {
+    margin-top: 10px;
+    padding: 8px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    display: block;
+    background-color: #ffffff;
+}
+.resource-contact strong {
+    color: #007bff;
+}
+
+/* --- Área de Input Fixa (Footer) --- */
 #footer-fixed-container {
     position: fixed;
     bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
     width: 100%;
-    max-width: 800px; 
-    background-color: var(--bg-light); 
-    z-index: 100;
-    padding-bottom: 10px; 
+    max-width: 800px; /* Largura do chat container */
+    background: #ffffff;
+    padding: 10px 0 0; 
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
 }
 
 #input-area {
-    padding: 15px 20px 5px; 
-    background-color: transparent; 
-    flex-shrink: 0; 
-    margin-bottom: 0; 
+    display: flex;
+    align-items: center;
+    padding: 0 20px 5px; 
 }
 
 #input-box-wrapper {
     display: flex;
-    align-items: center;
-    background-color: var(--input-bg);
-    border-radius: 28px;
-    padding: 5px 15px;
-    border: 1px solid var(--border-color);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    flex-grow: 1;
+    border: 1px solid #ced4da;
+    border-radius: 25px;
+    overflow: hidden;
+    background-color: #f8f9fa;
 }
 
 #user-input {
     flex-grow: 1;
-    background: none;
+    padding: 10px 15px;
     border: none;
-    padding: 14px 0; 
-    color: var(--text-dark);
-    font-size: 1em;
     outline: none;
-}
-
-#user-input::placeholder {
-    color: #a0a0a0;
+    font-size: 1em;
+    background-color: transparent;
 }
 
 #mic-wrapper {
-    position: relative;
+    padding: 0 10px;
     display: flex;
-    justify-content: center;
     align-items: center;
-    width: 40px; 
-    height: 40px;
     cursor: pointer;
-    margin-right: 10px;
-}
-
-#mic-icon {
-    color: var(--brand-color);
-    font-size: 1.2em;
-    z-index: 2; 
-    transition: color 0.2s;
-}
-
-#mic-wrapper.recording::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 30px;
-    height: 30px;
-    background-color: var(--mic-active-color);
-    border-radius: 50%;
-    opacity: 0.2;
-    animation: pulse-circle 1.5s infinite ease-out;
-    z-index: 1;
+    color: #6c757d;
 }
 
 #send-button {
-    background-color: var(--brand-color);
+    background-color: #ff69b4;
     color: white;
     border: none;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
+    padding: 10px 15px;
     cursor: pointer;
     font-size: 1em;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-left: 5px;
-    transition: background-color 0.2s, opacity 0.2s;
-}
-#send-button:hover {
-    background-color: #d11352;
-}
-#send-button:disabled {
-    opacity: 0.5;
-    cursor: default;
-    box-shadow: none; 
-}
-#send-button:disabled:hover {
-    background-color: var(--brand-color);
-}
-
-/* Disclaimer Abaixo do Chat */
-#disclaimer-bottom {
-    font-size: 0.85em;
-    color: #6c757d; 
-    text-align: center;
-    padding: 0 20px 5px; 
-    max-width: 800px; 
-    width: 100%; 
+    transition: background-color 0.3s;
     flex-shrink: 0;
+    border-radius: 0 25px 25px 0;
 }
 
-/* --- Botão de Pânico/Saída Rápida --- */
+#send-button:hover {
+    background-color: #e65a9e;
+}
+
+/* Disclaimer */
+#disclaimer-bottom {
+    font-size: 0.75em;
+    color: #6c757d;
+    text-align: center;
+    padding: 5px 20px 10px;
+}
+
+/* --- Botões Flutuantes (Pânico e Dark Mode) --- */
+
+/* Botão de Pânico (Saída Rápida) */
 #panic-button {
     position: fixed;
-    top: 20px; 
+    top: 20px;
     right: 20px;
-    background-color: #dc3545; 
+    width: 50px;
+    height: 50px;
+    background-color: #dc3545; /* Vermelho perigo */
     color: white;
-    width: 35px;
-    height: 35px;
     border-radius: 50%;
     display: flex;
-    justify-content: center;
     align-items: center;
-    font-size: 1.1em;
+    justify-content: center;
     cursor: pointer;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-    z-index: 1000; 
-    transition: background-color 0.2s;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    font-size: 1.5em;
+    z-index: 100;
+    transition: background-color 0.3s;
 }
+
 #panic-button:hover {
     background-color: #c82333;
 }
 
-/* --- NOVO: Botão de Toggle do Modo Escuro --- */
+/* Botão de Modo Escuro (Dark Mode Toggle) */
 #dark-mode-toggle {
     position: fixed;
-    top: 20px; 
-    right: 65px; /* Posição à esquerda do botão de pânico */
-    background-color: #343a40; 
+    top: 80px; /* 20px (top) + 50px (panic height) + 10px (spacing) */
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    background-color: #6c757d; 
     color: white;
-    width: 35px;
-    height: 35px;
     border-radius: 50%;
     display: flex;
-    justify-content: center;
     align-items: center;
-    font-size: 1em;
+    justify-content: center;
     cursor: pointer;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-    z-index: 1000; 
-    transition: background-color 0.2s;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    font-size: 1.5em;
+    z-index: 99;
+    transition: background-color 0.3s, transform 0.3s;
 }
+
 #dark-mode-toggle:hover {
-    background-color: #23272b;
+    background-color: #5a6268;
+    transform: scale(1.05);
 }
 
-/* Icone de sol no dark mode */
-body.dark-mode #dark-mode-toggle {
-    background-color: #f1f1f1;
-    color: #343a40;
+/* --- Estilos do Modo Escuro (DARK MODE) --- */
+body.dark-mode {
+    background-color: #121212; /* Fundo mais escuro */
+    color: #f1f1f1; /* Texto claro */
 }
 
-
-/* --- Estilização do Indicador de Digitação (Typing Indicator) --- */
-.typing-indicator {
-    background-color: var(--ia-bubble); 
-    color: var(--text-dark);
-    padding: 10px 15px;
-    border-radius: 20px 20px 20px 4px;
-    width: fit-content;
-    margin-right: auto;
-    margin-bottom: 15px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-body.dark-mode .typing-indicator {
-    background-color: var(--dark-ia-bubble);
+body.dark-mode #chat-container {
+    background: #1e1e1e; /* Container do chat escuro */
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
 }
 
-.typing-indicator span {
-    display: inline-block;
-    width: 6px;
-    height: 6px;
-    background-color: #a0a0a0;
-    border-radius: 50%;
-    margin: 0 2px;
-    opacity: 0;
-    animation: bounce 1.4s infinite ease-in-out both;
+body.dark-mode #reset-button {
+    background-color: rgba(30, 30, 30, 0.8);
+    color: #ff69b4;
 }
 
-.typing-indicator span:nth-child(1) {
-    animation-delay: -0.32s;
+body.dark-mode #footer-fixed-container {
+    background: #1e1e1e;
+    box-shadow: 0 -2px 10px rgba(255, 255, 255, 0.05);
 }
 
-.typing-indicator span:nth-child(2) {
-    animation-delay: -0.16s;
+body.dark-mode #input-box-wrapper {
+    background-color: #333333;
+    border-color: #444444;
 }
 
-
-/* --- Estilização do Feedback (Thumbs) --- */
-.feedback-container {
-    margin-top: 5px;
-    display: flex;
-    gap: 10px;
-    margin-left: 0; 
-    padding-top: 5px;
+body.dark-mode #user-input {
+    color: #f1f1f1;
 }
 
-.feedback-icon {
-    font-size: 1.1em;
-    color: #a0a0a0;
-    cursor: pointer;
-    transition: color 0.2s;
+body.dark-mode #mic-wrapper {
+    color: #aaaaaa;
 }
 
-.feedback-icon.like:hover {
-    color: #28a745; 
+/* Mensagens da Jady no Dark Mode */
+body.dark-mode .ai-message {
+    background-color: #333333; /* Cinza escuro */
+    color: #f1f1f1;
 }
 
-.feedback-icon.dislike:hover {
-    color: #dc3545; 
+body.dark-mode .ai-message .resource-contact {
+    border-color: #444444;
+    background-color: #1e1e1e;
 }
 
-/* Estado de ícone selecionado */
-.feedback-icon.selected {
-    color: var(--brand-color); 
-    cursor: default;
-}
-
-.feedback-icon.selected.like {
-    color: #28a745;
-}
-
-.feedback-icon.selected.dislike {
-    color: #dc3545;
-}
-
-.feedback-message {
-    font-size: 0.8em;
-    color: #6c757d;
-    margin-left: 10px;
-    display: none; 
-    align-self: center;
-}
-
-
-/* --- Animações --- */
-@keyframes pulse-circle {
-    0% {
-        transform: translate(-50%, -50%) scale(1);
-        opacity: 0.2;
-    }
-    50% {
-        transform: translate(-50%, -50%) scale(1.5);
-        opacity: 0.4;
-    }
-    100% {
-        transform: translate(-50%, -50%) scale(1);
-        opacity: 0.2;
-    }
-}
-
-@keyframes bounce {
-    0%, 80%, 100% {
-        transform: scale(0);
-        opacity: 0;
-    }
-    40% {
-        transform: scale(1);
-        opacity: 1;
-    }
+/* Disclaimer no Dark Mode */
+body.dark-mode #disclaimer-bottom {
+    color: #aaaaaa;
 }
 
 
@@ -457,6 +297,7 @@ body.dark-mode .typing-indicator {
         box-sizing: border-box; 
     }
 
+    /* Botão de Pânico (topo direito) */
     #panic-button {
         top: 10px; 
         right: 10px;
@@ -465,9 +306,10 @@ body.dark-mode .typing-indicator {
         font-size: 1.3em;
     }
     
+    /* NOVO POSICIONAMENTO: Abaixo do botão de pânico no mobile */
     #dark-mode-toggle {
-        top: 10px; 
-        right: 60px;
+        top: 60px; /* 10px (top) + 40px (panic height) + 10px (spacing) */
+        right: 10px;
         width: 40px;
         height: 40px;
         font-size: 1.2em;

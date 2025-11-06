@@ -1,6 +1,6 @@
 import os
 import datetime
-import json # NOVO: Necessário para trabalhar com JSON
+import json
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from google import genai
 from google.genai import types
@@ -26,38 +26,55 @@ client = genai.Client(api_key=GEMINI_API_KEY)
 KNOWLEDGE_FILE = 'knowledge.txt'
 LOGS_FILE = 'logs.txt'
 FEEDBACK_FILE = 'feedback.txt'
-RESOURCES_FILE = 'resources.json' # NOVO ARQUIVO DE RECURSOS
+RESOURCES_FILE = 'resources.json' 
+
+# NOVO: Variável global para rastrear problemas de arquivo que serão exibidos no Admin
+FILE_ERROR_MESSAGE = ""
 
 # Garante que os arquivos existam e inicializa RESOURCES_FILE
 def initialize_files():
     """Garante que os arquivos necessários existam e os inicializa se for a primeira vez."""
-    for filename in [KNOWLEDGE_FILE, LOGS_FILE, FEEDBACK_FILE]:
-        if not os.path.exists(filename):
-            with open(filename, 'w', encoding='utf-8') as f:
-                if filename == KNOWLEDGE_FILE:
-                    f.write("Você é a Jady, assistente de apoio do Quebre o Ciclo. Sempre responda em português. Seu objetivo é fornecer informações sobre direitos, leis (como Lei Maria da Penha) e locais de ajuda. Mantenha o tom de voz acolhedor, empático e informativo. Sempre reforce para a usuária buscar ajuda profissional ou ligar 190 em caso de emergência. Nunca se apresente como terapeuta ou substituta de apoio legal/policial.")
-                elif filename == LOGS_FILE:
-                    f.write(f"--- Logs Iniciados em {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ---\n")
-                elif filename == FEEDBACK_FILE:
-                    f.write(f"--- Feedback Iniciado em {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ---\n")
+    global FILE_ERROR_MESSAGE
     
-    # Inicializa o arquivo JSON de Recursos
-    if not os.path.exists(RESOURCES_FILE):
-        default_resources = {
-            "title": "Contatos e Fontes de Apoio (Editável no Admin)",
-            "description": "Estes são contatos importantes que você pode usar para apoio imediato.",
-            "contacts": [
-                {"name": "Emergência (Polícia)", "value": "190"},
-                {"name": "Central de Atendimento à Mulher", "value": "180"},
-                {"name": "Conselho Tutelar", "value": "Disque 100"},
-                {"name": "Centro de Referência de Assistência Social (CRAS)", "value": "Busque o endereço mais próximo no Google"}
-            ]
-        }
-        try:
-            with open(RESOURCES_FILE, 'w', encoding='utf-8') as f:
-                json.dump(default_resources, f, ensure_ascii=False, indent=4)
-        except IOError as e:
-            print(f"Erro ao inicializar o arquivo de recursos: {e}")
+    # Lista de arquivos que DEVEM EXISTIR e precisam de conteúdo inicial
+    files_to_initialize = {
+        KNOWLEDGE_FILE: "Você é a Jady, assistente de apoio do Quebre o Ciclo. Sempre responda em português. Seu objetivo é fornecer informações sobre direitos, leis (como Lei Maria da Penha) e locais de ajuda. Mantenha o tom de voz acolhedor, empático e informativo. Sempre reforce para a usuária buscar ajuda profissional ou ligar 190 em caso de emergência. Nunca se apresente como terapeuta ou substituta de apoio legal/policial.",
+        RESOURCES_FILE: None 
+    }
+    
+    # 1. Inicializa KNOWLEDGE e RESOURCES (devem existir)
+    for filename, default_content in files_to_initialize.items():
+        if not os.path.exists(filename):
+            try:
+                if filename == RESOURCES_FILE:
+                    default_resources = {
+                        "title": "Contatos e Fontes de Apoio (Editável no Admin)",
+                        "description": "Estes são contatos importantes que você pode usar para apoio imediato.",
+                        "contacts": [
+                            {"name": "Emergência (Polícia)", "value": "190"},
+                            {"name": "Central de Atendimento à Mulher", "value": "180"},
+                            {"name": "Conselho Tutelar", "value": "Disque 100"},
+                            {"name": "CRAS", "value": "Busque o endereço mais próximo no Google"}
+                        ]
+                    }
+                    with open(RESOURCES_FILE, 'w', encoding='utf-8') as f:
+                        json.dump(default_resources, f, ensure_ascii=False, indent=4)
+                else: # KNOWLEDGE_FILE
+                    with open(filename, 'w', encoding='utf-8') as f:
+                        f.write(default_content)
+            except Exception as e:
+                FILE_ERROR_MESSAGE += f"ERRO FATAL DE INICIALIZAÇÃO: Não foi possível criar/escrever em {filename}. ({e}). "
+
+
+    # 2. Garante a existência dos arquivos de LOGS e FEEDBACK, mas COM TRATAMENTO DE ERRO
+    for filename in [LOGS_FILE, FEEDBACK_FILE]:
+        if not os.path.exists(filename):
+            try:
+                with open(filename, 'w', encoding='utf-8') as f:
+                    f.write(f"--- {filename} Iniciado em {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ---\n")
+            except Exception as e:
+                # AVISO: A escrita falhou. O admin não conseguirá gerenciar estes logs.
+                print(f"AVISO: Falha ao criar {filename}. Erro: {e}")
 
 initialize_files() # Chama a função de inicialização na startup
 
@@ -68,7 +85,7 @@ def get_system_instruction():
         with open(KNOWLEDGE_FILE, 'r', encoding='utf-8') as f:
             return f.read().strip()
     except FileNotFoundError:
-        return "Você é a Jady, assistente de apoio do Quebre o Ciclo."
+        return "Você é a Jady, assistente de apoio do Quebre o Ciclo. Por favor, avise o administrador que o arquivo knowledge.txt não foi encontrado."
 
 def get_resources():
     """Lê e retorna o conteúdo do resources.json."""
@@ -76,7 +93,6 @@ def get_resources():
         with open(RESOURCES_FILE, 'r', encoding='utf-8') as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
-        # Retorna estrutura vazia em caso de erro de leitura
         return {"title": "Recursos Indisponíveis", "description": "Erro ao carregar recursos.", "contacts": []}
 
 def log_conversation(user_message, ai_response):
@@ -92,7 +108,7 @@ def log_conversation(user_message, ai_response):
         with open(LOGS_FILE, 'a', encoding='utf-8') as f:
             f.write(log_entry)
     except IOError as e:
-        print(f"Erro ao escrever no arquivo de logs: {e}")
+        print(f"ERRO: Não foi possível escrever no arquivo de logs ({LOGS_FILE}): {e}")
 
 def log_feedback(feedback_type, user_prompt, ai_response):
     """Registra o feedback do usuário no arquivo."""
@@ -107,12 +123,10 @@ def log_feedback(feedback_type, user_prompt, ai_response):
         with open(FEEDBACK_FILE, 'a', encoding='utf-8') as f:
             f.write(feedback_entry)
     except IOError as e:
-        print(f"Erro ao escrever no arquivo de feedback: {e}")
+        print(f"ERRO: Não foi possível escrever no arquivo de feedback ({FEEDBACK_FILE}): {e}")
 
-# --- Funções do Gemini ---
+# --- Funções do Gemini (Mantidas) ---
 def start_chat():
-    """Inicializa um novo chat com a instrução do sistema."""
-    # NOVO: Inclui os recursos no system_instruction para que a Jady possa usá-los
     resources = get_resources()
     resources_text = "\n\n--- RECURSOS DE APOIO ---\n"
     for contact in resources.get('contacts', []):
@@ -138,7 +152,6 @@ def chat_endpoint():
     user_message = data.get('message', '')
     history = data.get('history', [])
     
-    # 1. Reconstroi o chat a partir do histórico
     chat = start_chat()
     for item in history:
         if item['role'] == 'model' and item['parts'][0]['text'].startswith("Olá! Eu sou a **Jady**"):
@@ -146,11 +159,9 @@ def chat_endpoint():
         chat.history.append(types.Content(**item))
 
     try:
-        # 2. Envia a nova mensagem
         response = chat.send_message(user_message)
         ai_response = response.text
         
-        # 3. LOGA A CONVERSA
         log_conversation(user_message, ai_response)
         
         last_user_prompt = user_message 
@@ -179,7 +190,7 @@ def receive_feedback():
     return jsonify({'status': 'error', 'message': 'Dados de feedback inválidos.'}), 400
 
 
-# --- Rotas Admin (Atualizadas para Recursos) ---
+# --- Rotas Admin (Atualizadas para Recursos e Logs Robustos) ---
 @app.route('/admin', methods=['GET', 'POST'])
 def admin_login():
     if 'logged_in' in session:
@@ -203,12 +214,14 @@ def admin_painel():
         return redirect(url_for('admin_login'))
 
     system_instruction = get_system_instruction()
-    resources_content = json.dumps(get_resources(), ensure_ascii=False, indent=4) # Carrega recursos como string JSON
-    message = None
+    resources_content = json.dumps(get_resources(), ensure_ascii=False, indent=4) 
+    
+    # Usa a variável global de erro de arquivo como mensagem inicial
+    message = FILE_ERROR_MESSAGE 
     
     if request.method == 'POST':
+        # ... (Processamento de Formulário POST para Knowledge e Resources - Mantido) ...
         if 'knowledge' in request.form:
-            # 1. Processa Edição de Conhecimento
             new_instruction = request.form['knowledge']
             try:
                 with open(KNOWLEDGE_FILE, 'w', encoding='utf-8') as f:
@@ -219,14 +232,12 @@ def admin_painel():
                 message = "Erro ao salvar o arquivo knowledge.txt."
         
         if 'resources' in request.form:
-            # NOVO: 2. Processa Edição de Recursos JSON
             new_resources_content = request.form['resources']
             try:
-                # Tenta carregar para validar se é um JSON válido
                 json.loads(new_resources_content) 
                 with open(RESOURCES_FILE, 'w', encoding='utf-8') as f:
                     f.write(new_resources_content)
-                resources_content = new_resources_content # Atualiza a variável para o template
+                resources_content = new_resources_content 
                 message = "Fontes de Apoio (resources.json) atualizadas com sucesso!"
             except json.JSONDecodeError:
                 message = "ERRO: O conteúdo enviado para Fontes de Apoio não é um JSON válido. Por favor, verifique a sintaxe."
@@ -235,43 +246,48 @@ def admin_painel():
         
         # Lógica de reset (logs e feedback)
         if 'reset_logs' in request.form:
-            # 3. Processa Reset de Logs
             try:
+                # Tenta resetar o arquivo de Logs
                 with open(LOGS_FILE, 'w', encoding='utf-8') as f:
                     f.write(f"--- Logs Resetados em {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ---\n")
                 message = "Logs de conversa resetados com sucesso!"
             except IOError:
-                message = "Erro ao resetar o arquivo de logs."
+                message = "ERRO: Falha ao resetar o arquivo de logs. O arquivo pode ser somente leitura no servidor."
         
         if 'reset_feedback' in request.form: 
-            # 4. Processa Reset de Feedback
             try:
+                # Tenta resetar o arquivo de Feedback
                 with open(FEEDBACK_FILE, 'w', encoding='utf-8') as f:
                     f.write(f"--- Feedback Resetado em {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ---\n")
                 message = "Logs de feedback resetados com sucesso!"
             except IOError:
-                message = "Erro ao resetar o arquivo de feedback."
+                message = "ERRO: Falha ao resetar o arquivo de feedback. O arquivo pode ser somente leitura no servidor."
                 
-    # Lê os logs e feedback para exibição
+    # Lê os logs e feedback para exibição (AGORA MAIS ROBUSTO)
     try:
         with open(LOGS_FILE, 'r', encoding='utf-8') as f:
             logs_content = f.read()
     except FileNotFoundError:
-        logs_content = "Arquivo de logs não encontrado."
+        logs_content = "ARQUIVO LOGS.TXT NÃO ENCONTRADO. PODE SER UM PROBLEMA DE PERMISSÃO NO DEPLOY."
+    except IOError:
+         logs_content = "ERRO DE LEITURA DO LOGS.TXT. O arquivo pode ser somente leitura no servidor."
 
     try:
         with open(FEEDBACK_FILE, 'r', encoding='utf-8') as f:
             feedback_content = f.read()
     except FileNotFoundError:
-        feedback_content = "Arquivo de feedback não encontrado."
+        feedback_content = "ARQUIVO FEEDBACK.TXT NÃO ENCONTRADO. PODE SER UM PROBLEMA DE PERMISSÃO NO DEPLOY."
+    except IOError:
+        feedback_content = "ERRO DE LEITURA DO FEEDBACK.TXT. O arquivo pode ser somente leitura no servidor."
+
 
     return render_template(
         'admin_painel.html', 
         system_instruction=system_instruction, 
-        resources_content=resources_content, # Passa o JSON dos recursos
+        resources_content=resources_content, 
         logs_content=logs_content, 
         feedback_content=feedback_content,
-        message=message
+        message=message # Inclui mensagem de erro ou sucesso
     )
 
 

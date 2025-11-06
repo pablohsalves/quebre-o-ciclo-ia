@@ -68,6 +68,13 @@
             background-color: #d1e7dd;
             border-color: #badbcc;
         }
+        /* ESTILO PARA MENSAGENS DE ERRO */
+        .alert-error {
+            background-color: #f8d7da; 
+            color: #721c24; 
+            border-color: #f5c6cb;
+            font-weight: bold;
+        }
         .logout-link {
             float: right;
             color: #dc3545;
@@ -78,7 +85,6 @@
         .logout-link:hover {
             color: #a71d2a;
         }
-        /* Estilo para a área de Logs/JSON */
         .logs-area {
             background-color: #333;
             color: #e0e0e0;
@@ -87,6 +93,7 @@
             overflow-x: auto;
             white-space: pre-wrap;
             margin-bottom: 10px;
+            min-height: 150px;
         }
         .logs-actions {
             display: flex;
@@ -114,7 +121,11 @@
         <h1>Painel de Administração | Jady</h1>
 
         {% if message %}
-            <div class="alert alert-success">{{ message }}</div>
+            {% if 'ERRO' in message or 'FALHA' in message %}
+                <div class="alert alert-error">{{ message }}</div>
+            {% else %}
+                <div class="alert alert-success">{{ message }}</div>
+            {% endif %}
         {% endif %}
 
         <h2>1. Edição da Instrução do Sistema (knowledge.txt)</h2>
