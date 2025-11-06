@@ -8,7 +8,6 @@ try:
     from google import genai
     from google.genai import types
 except ImportError:
-    # Se a biblioteca não estiver instalada (improvável no Render, mas bom para local)
     print("Atenção: A biblioteca google-genai não está instalada.")
     genai = None
     types = None
@@ -25,12 +24,10 @@ def load_internal_knowledge(filename='knowledge.txt'):
     Caso contrário, retorna uma string vazia.
     """
     try:
-        # Verifica se o arquivo existe no diretório raiz do projeto
         if os.path.exists(filename):
             with open(filename, 'r', encoding='utf-8') as f:
                 content = f.read()
                 logger.info(f"Conhecimento interno carregado de {filename} ({len(content)} caracteres).")
-                # Retorna o conteúdo para ser usado na System Instruction
                 return content + "\n\n--- DIRETRIZES EXTRAS ---\n\n"
         else:
             logger.warning(f"Arquivo de conhecimento interno {filename} não encontrado. Usando apenas instruções fixas.")
@@ -160,18 +157,18 @@ def feedback():
         logger.error(f"Erro ao processar feedback: {e}", exc_info=True)
         return jsonify({"status": "error", "message": "Erro interno ao processar feedback."}), 500
 
-# --- Rotas Administrativas REESTABELECIDAS ---
-# Estas rotas assumem que você tem os arquivos HTML correspondentes em /templates
-@app.route('/admin/login')
+# --- Rotas Administrativas REESTABELECIDA E CORRIGIDA ---
+
+@app.route('/admin/login', methods=['GET', 'POST']) # <--- CORREÇÃO AQUI
 def admin_login():
     """Renderiza a página de login administrativa."""
-    # NÃO inclui lógica de autenticação
+    # Sua lógica de GET/POST de login iria aqui
     return render_template('admin_login.html')
 
-@app.route('/admin/painel')
+@app.route('/admin/painel') # Mantém o default para GET
 def admin_painel():
     """Renderiza o painel administrativo."""
-    # NÃO inclui lógica de autenticação
+    # Sua lógica de carregamento de dados do painel iria aqui
     return render_template('admin_painel.html')
 
 @app.route('/panic', methods=['POST'])
