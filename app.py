@@ -1,16 +1,50 @@
 import os
 import json
-import logging # <-- NOVO: Para registrar logs de feedback
+import logging 
 from flask import Flask, render_template, request, jsonify, redirect, url_for
-from google import genai
-from google.genai import types
 
-# --- 1. Configuração do Logger ---
-# Configuração básica de Logging para aparecer nos logs do Render
+# Tenta carregar o cliente Gemini; mantém a importação mesmo se a chave faltar
+try:
+    from google import genai
+    from google.genai import types
+except ImportError:
+    # Se a biblioteca não estiver instalada (improvável no Render, mas bom para local)
+    print("Atenção: A biblioteca google-genai não está instalada.")
+    genai = None
+    types = None
+
+
+# --- 1. Configuração do Logger e Conhecimento Interno ---
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s') 
 logger = logging.getLogger(__name__)
 
+def load_internal_knowledge(filename='knowledge.txt'):
+    """
+    Carrega o texto do arquivo knowledge.txt, se existir.
+    Caso contrário, retorna uma string vazia.
+    """
+    try:
+        # Verifica se o arquivo existe no diretório raiz do projeto
+        if os.path.exists(filename):
+            with open(filename, 'r', encoding='utf-8') as f:
+                content = f.read()
+                logger.info(f"Conhecimento interno carregado de {filename} ({len(content)} caracteres).")
+                # Retorna o conteúdo para ser usado na System Instruction
+                return content + "\n\n--- DIRETRIZES EXTRAS ---\n\n"
+        else:
+            logger.warning(f"Arquivo de conhecimento interno {filename} não encontrado. Usando apenas instruções fixas.")
+            return ""
+    except Exception as e:
+        logger.error(f"Erro ao ler knowledge.txt: {e}")
+        return ""
+
+# Carrega o conhecimento uma vez na inicialização
+INTERNAL_KNOWLEDGE = load_internal_knowledge()
+
+
 # --- 2. Configuração do Flask e Gemini ---
+
 app = Flask(__name__)
 
 # Variável de ambiente (Chave da API)
@@ -18,22 +52,18 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 if not GEMINI_API_KEY:
     logger.error("A variável de ambiente GEMINI_API_KEY não está configurada.")
-    # Neste ambiente de desenvolvimento/deploy, é melhor levantar um erro se a chave estiver faltando.
-    # raise ValueError("GEMINI_API_KEY não configurada.")
-    # No entanto, vamos simular a inicialização para que o restante do código compile
-    # e depender da verificação dentro da rota para evitar falhas imediatas.
-    pass 
 
 # Inicializa o cliente Gemini
-try:
-    client = genai.Client(api_key=GEMINI_API_KEY)
-except Exception as e:
-    logger.error(f"Erro ao inicializar o cliente Gemini: {e}")
-    client = None
+client = None
+if genai and GEMINI_API_KEY:
+    try:
+        client = genai.Client(api_key=GEMINI_API_KEY)
+    except Exception as e:
+        logger.error(f"Erro ao inicializar o cliente Gemini: {e}")
 
-# Configuração do modelo e do sistema
-MODEL_NAME = "gemini-2.5-flash"
-SYSTEM_INSTRUCTION = """
+
+# Junta o conhecimento interno (lido do arquivo) com as regras fixas
+SYSTEM_INSTRUCTION = INTERNAL_KNOWLEDGE + """
 Você é a Jady, uma assistente virtual de apoio para mulheres em situação de vulnerabilidade, violência doméstica e violência de gênero, parte do projeto "Quebre o Ciclo".
 
 Seu principal objetivo é fornecer informações de forma clara, acolhedora e empática.
@@ -51,7 +81,7 @@ Mantenha as respostas concisas e diretas, mas sempre com um tom de apoio.
 # Configuração de Geração (para garantir a segurança e tom)
 generation_config = types.GenerateContentConfig(
     system_instruction=SYSTEM_INSTRUCTION,
-    temperature=0.7, # Um pouco de criatividade, mas mantendo a factualidade
+    temperature=0.7, 
 )
 
 # --- 3. Rotas do Flask ---
@@ -68,7 +98,7 @@ def chat():
     e retorna a resposta da IA.
     """
     if not client:
-        return jsonify({"response": "Desculpe, a conexão com a IA não está ativa. Por favor, tente mais tarde."}), 503
+        return jsonify({"response": "Desculpe, a conexão com a IA não está ativa. Chave de API ausente ou erro de inicialização."}), 503
 
     try:
         data = request.get_json()
@@ -86,7 +116,7 @@ def chat():
         
         # Cria uma nova sessão de chat com histórico
         chat_session = client.chats.create(
-            model=MODEL_NAME,
+            model="gemini-2.5-flash",
             history=chat_history,
             config=generation_config
         )
@@ -101,7 +131,6 @@ def chat():
         return jsonify({"response": "Desculpe, ocorreu um erro interno ao processar sua solicitação."}), 500
 
 
-# --- 4. Rota de Feedback (CORRIGIDA) ---
 @app.route('/feedback', methods=['POST'])
 def feedback():
     """
@@ -109,8 +138,6 @@ def feedback():
     """
     try:
         data = request.get_json()
-        
-        # 1. Validação e extração de dados
         feedback_type = data.get('type')
         user_prompt = data.get('user_prompt', 'N/A')
         ai_response_text = data.get('ai_response_text', 'N/A')
@@ -119,40 +146,45 @@ def feedback():
             logger.warning("Feedback recebido sem tipo.")
             return jsonify({"status": "error", "message": "Tipo de feedback ausente."}), 400
 
-        # 2. Registro do Log
-        # Usamos o logger para registrar o evento. Isso aparecerá nos logs do Render.
-        # Limitamos a 80 caracteres para manter o log legível
+        # Registro do Log
         log_message = (
             f"FEEDBACK_REGISTRADO: Tipo={feedback_type} | "
             f"Prompt='{user_prompt[:80].replace('\n', ' ')}...' | "
             f"Response='{ai_response_text[:80].replace('\n', ' ')}...'"
         )
-        
-        # Registra como INFO para fácil rastreamento
         logger.info(log_message) 
 
-        # 3. Retorno para o Front-End
         return jsonify({"status": "success", "message": "Feedback registrado com sucesso.", "type": feedback_type}), 200
 
     except Exception as e:
         logger.error(f"Erro ao processar feedback: {e}", exc_info=True)
         return jsonify({"status": "error", "message": "Erro interno ao processar feedback."}), 500
 
-# --- 5. Rota de Pânico (Redirecionamento) ---
+# --- Rotas Administrativas REESTABELECIDAS ---
+# Estas rotas assumem que você tem os arquivos HTML correspondentes em /templates
+@app.route('/admin/login')
+def admin_login():
+    """Renderiza a página de login administrativa."""
+    # NÃO inclui lógica de autenticação
+    return render_template('admin_login.html')
+
+@app.route('/admin/painel')
+def admin_painel():
+    """Renderiza o painel administrativo."""
+    # NÃO inclui lógica de autenticação
+    return render_template('admin_painel.html')
+
 @app.route('/panic', methods=['POST'])
 def panic_redirect():
     """
     Rota simples para acionar o redirecionamento imediato em caso de emergência.
     """
     logger.warning("Botão de Pânico acionado. Redirecionando para o Google.")
-    # O redirecionamento é feito principalmente pelo JS do cliente,
-    # mas esta rota pode ser um fallback para registro de log no servidor.
     return jsonify({"status": "redirect", "url": "https://www.google.com"}), 200
 
 
-# --- 6. Execução ---
+# --- 4. Execução ---
 if __name__ == '__main__':
     # Porta para execução local e para o Render
     port = int(os.environ.get('PORT', 5000))
-    # Em produção (Render), use host='0.0.0.0'
     app.run(host='0.0.0.0', port=port)
