@@ -2,7 +2,8 @@
 let chatHistory = [];
 let lastUserPrompt = "";
 let lastAiResponseText = "";
-let isDarkMode = localStorage.getItem('darkMode') === 'enabled';
+// isDarkMode deve ser lida a partir do localStorage na inicialização
+let isDarkMode = localStorage.getItem('darkMode') === 'enabled'; 
 
 // --- Elementos DOM ---
 const messagesArea = document.getElementById('messages-area');
@@ -13,26 +14,27 @@ const panicButton = document.getElementById('panic-button');
 const darkModeToggle = document.getElementById('dark-mode-toggle');
 const micWrapper = document.getElementById('mic-wrapper'); 
 
-// --- Configuração do Reconhecimento de Voz ---
+// --- Configuração do Reconhecimento de Voz (Mantido) ---
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null;
 let isListening = false;
 
 if (SpeechRecognition) {
+    // Configurações e eventos de reconhecimento de voz (Mantido) ...
     recognition = new SpeechRecognition();
-    recognition.continuous = false; // Captura apenas uma frase por vez
+    recognition.continuous = false; 
     recognition.lang = 'pt-BR'; 
 
     recognition.onstart = function() {
         isListening = true;
-        micWrapper.style.color = 'red'; // Indica que está gravando
+        micWrapper.style.color = 'red';
         userInput.placeholder = 'Ouvindo...';
     };
 
     recognition.onresult = function(event) {
         const transcript = event.results[0][0].transcript;
         userInput.value = transcript;
-        sendMessage(); // Envia automaticamente após a transcrição
+        sendMessage();
     };
 
     recognition.onerror = function(event) {
@@ -51,7 +53,6 @@ if (SpeechRecognition) {
         }
     };
 } else {
-    // Se o navegador não suportar, desativa visualmente o microfone
     if (micWrapper) {
         micWrapper.style.display = 'none';
         console.warn('Reconhecimento de voz não suportado neste navegador.');
@@ -163,13 +164,12 @@ function resetChat() {
 
 // --- Funções UX/Acessibilidade ---
 
-function toggleDarkMode() {
-    isDarkMode = !isDarkMode;
-    document.body.classList.toggle('dark-mode', isDarkMode);
-    localStorage.setItem('darkMode', isDarkMode ? 'enabled' : 'disabled');
-
+// Função auxiliar para aplicar o modo e o ícone
+function applyDarkMode(enable) {
     const icon = darkModeToggle.querySelector('i');
-    if (isDarkMode) {
+    document.body.classList.toggle('dark-mode', enable);
+
+    if (enable) {
         icon.classList.remove('fa-moon');
         icon.classList.add('fa-sun');
     } else {
@@ -178,18 +178,23 @@ function toggleDarkMode() {
     }
 }
 
+function toggleDarkMode() {
+    isDarkMode = !isDarkMode;
+    applyDarkMode(isDarkMode);
+    localStorage.setItem('darkMode', isDarkMode ? 'enabled' : 'disabled');
+}
+
 function handlePanicClick() {
     window.location.href = 'https://www.google.com'; 
 }
 
 function initializeApp() {
-    if (isDarkMode) {
-        document.body.classList.add('dark-mode');
-        const icon = darkModeToggle.querySelector('i');
-        icon.classList.remove('fa-moon');
-        icon.classList.add('fa-sun');
-    }
+    // CORREÇÃO: Aplica o modo escuro salvo imediatamente
+    applyDarkMode(isDarkMode);
+    
+    // Adiciona a mensagem inicial da Jady
     addInitialMessage();
+    
     userInput.focus();
 }
 
