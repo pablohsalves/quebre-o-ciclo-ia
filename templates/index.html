@@ -3,46 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quebre o Ciclo | Jady</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <title>Jady | Quebre o Ciclo</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
 </head>
 <body>
+
+    <div id="panic-button" onclick="handlePanicClick()">
+        <i class="fas fa-times"></i>
+    </div>
+    
+    <div id="dark-mode-toggle" onclick="toggleDarkMode()">
+        <i class="fas fa-moon"></i>
+    </div>
 
     <div id="chat-container">
         
         <div id="messages-area">
-            <i class="fas fa-redo" id="reset-button" title="Limpar Conversa"></i>
-        </div>
+            <div id="reset-button" title="Limpar Conversa"><i class="fas fa-redo"></i></div>
+            </div>
 
     </div>
-    
+
     <div id="footer-fixed-container">
         <div id="input-area">
+            
             <div id="input-box-wrapper">
-                <input type="text" id="user-input" placeholder="Fale com a Jady..."> 
+                <input type="text" id="user-input" placeholder="Pergunte sobre leis, direitos ou locais de apoio...">
                 
-                <div id="mic-wrapper">
-                    <i class="fas fa-microphone" id="mic-icon"></i> 
                 </div>
-
-                <button id="send-button">
-                    <i class="fas fa-paper-plane"></i> 
-                </button>
+            
+            <div id="send-button">
+                <i class="fas fa-paper-plane"></i>
             </div>
+            
         </div>
         
         <div id="disclaimer-bottom">
             O Quebre o Ciclo pode cometer erros. Por isso, é bom checar as respostas e sempre ligar **190** em caso de emergência.
         </div>
-    </div>
-
-    <div id="panic-button" title="Saída Rápida">
-        <i class="fas fa-times"></i>
-    </div>
-    
-    <div id="dark-mode-toggle" title="Alternar Modo Escuro">
-        <i class="fas fa-moon"></i>
     </div>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>

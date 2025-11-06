@@ -11,6 +11,7 @@ const sendButton = document.getElementById('send-button');
 const resetButton = document.getElementById('reset-button');
 const panicButton = document.getElementById('panic-button');
 const darkModeToggle = document.getElementById('dark-mode-toggle');
+// const micWrapper = document.getElementById('mic-wrapper'); // REMOVIDO/DESATIVADO
 
 // --- Funções de Renderização e Lógica do Chat ---
 
@@ -28,19 +29,13 @@ function displayMessage(role, text) {
 
 function formatMarkdown(text) {
     // Substituições básicas de Markdown para HTML
-    // Negrito (**)
     text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    // Lista (opcional, pode ser melhor tratada pelo navegador/CSS)
-    // text = text.replace(/^- (.*)$/gm, '<li>$1</li>'); 
-    
-    // Quebras de linha (essencial para formatar o texto da IA)
     text = text.replace(/\n/g, '<br>');
     
     return text;
 }
 
 function addAiFeedbackButtons(messageDiv) {
-    // Cria o container para os botões de feedback (thumbs up/down)
     const feedbackDiv = document.createElement('div');
     feedbackDiv.className = 'feedback-buttons';
     feedbackDiv.innerHTML = `
@@ -61,22 +56,20 @@ function handleFeedbackClick(event) {
     if (feedbackButtons.classList.contains('disabled')) return;
     feedbackButtons.classList.add('disabled');
 
-    // Desativa ambos os botões visualmente
+    // Desativa e altera visualmente os botões
     feedbackButtons.querySelectorAll('i').forEach(i => {
         i.style.color = '#ccc';
         i.style.cursor = 'default';
         i.style.pointerEvents = 'none';
     });
     
-    // Destaca o ícone clicado
     icon.style.color = feedbackType === 'positivo' ? '#28a745' : '#dc3545';
     icon.style.fontWeight = 'bold';
-
 
     // Envia o feedback para o servidor
     sendFeedback(feedbackType);
 
-    // Adiciona uma mensagem de agradecimento temporária
+    // Adiciona uma mensagem de agradecimento
     const thanksMessage = document.createElement('span');
     thanksMessage.textContent = ' Obrigado pelo feedback!';
     thanksMessage.style.marginLeft = '10px';
@@ -113,18 +106,16 @@ async function sendMessage() {
     // 1. Limpa o input e desativa a interface
     userInput.value = '';
     userInput.disabled = true;
-    sendButton.disabled = true;
+    sendButton.style.opacity = '0.5'; // Visualmente desativa
     
     // 2. Adiciona a mensagem do usuário
     displayMessage('user', message);
-    
-    // 3. Salva a última mensagem do usuário (para o feedback)
     lastUserPrompt = message;
 
-    // 4. Adiciona a mensagem de 'Digitando...' (placeholder para a IA)
+    // 3. Adiciona a mensagem de 'Digitando...'
     const typingMessage = displayMessage('ai', '<i class="fas fa-ellipsis-h typing-indicator"></i>');
 
-    // 5. Adiciona a mensagem do usuário ao histórico (antes de enviar)
+    // 4. Adiciona a mensagem do usuário ao histórico 
     chatHistory.push({ role: "user", parts: [{ text: message }] });
 
     try {
@@ -136,7 +127,6 @@ async function sendMessage() {
             body: JSON.stringify({ message: message, history: chatHistory })
         });
 
-        // 6. Trata a resposta HTTP
         if (!response.ok) {
             throw new Error(`Erro HTTP: ${response.status}`);
         }
@@ -144,33 +134,32 @@ async function sendMessage() {
         const data = await response.json();
         const aiResponse = data.response;
         
-        // 7. Remove a mensagem de 'Digitando...'
+        // 5. Remove a mensagem de 'Digitando...'
         messagesArea.removeChild(typingMessage);
         
-        // 8. Exibe a resposta real da IA
+        // 6. Exibe a resposta real da IA
         const aiMessageDiv = displayMessage('ai', aiResponse);
         
-        // 9. Atualiza o histórico e salva a resposta para o feedback
+        // 7. Atualiza o histórico e feedback
         chatHistory.push({ role: "model", parts: [{ text: aiResponse }] });
         lastAiResponseText = aiResponse;
 
-        // 10. Adiciona botões de feedback SÓ na resposta da IA
+        // 8. Adiciona botões de feedback 
         addAiFeedbackButtons(aiMessageDiv);
         
     } catch (error) {
         console.error('Erro ao comunicar com o servidor:', error);
         
-        // CORREÇÃO: Remove a mensagem de 'Digitando...'
+        // 9. Remove a mensagem de 'Digitando...' e exibe erro
         messagesArea.removeChild(typingMessage);
         
-        // Exibe a mensagem de erro com botões de feedback, mas NÃO envia o feedback.
-        const errorMessageDiv = displayMessage('ai', 'Desculpe, não consegui me conectar ao servidor. Por favor, tente novamente.');
-        errorMessageDiv.innerHTML += '<br>Obrigado pelo feedback!'; // Mensagem de sucesso simulada no erro da imagem
+        // CORREÇÃO: Exibe a mensagem de erro SEM botões de feedback, para não ser enviado
+        displayMessage('ai', 'Desculpe, não consegui me conectar ao servidor. Por favor, tente novamente ou ligue 190.');
 
     } finally {
-        // 11. Reativa a interface
+        // 10. Reativa a interface
         userInput.disabled = false;
-        sendButton.disabled = false;
+        sendButton.style.opacity = '1';
         userInput.focus();
     }
 }
@@ -201,7 +190,6 @@ function toggleDarkMode() {
 }
 
 function handlePanicClick() {
-    // Redireciona rapidamente para uma página neutra
     window.location.href = 'https://www.google.com'; 
 }
 
@@ -217,10 +205,7 @@ function initializeApp() {
     // 2. Adiciona a mensagem inicial da Jady
     addInitialMessage();
     
-    // 3. CORREÇÃO: Atualiza o placeholder
-    userInput.placeholder = "Pergunte sobre leis, direitos ou locais de apoio...";
-    
-    // 4. Garante que a área de mensagens esteja visível (foco no input)
+    // 3. Garante que a área de mensagens esteja visível (foco no input)
     userInput.focus();
 }
 
@@ -229,7 +214,6 @@ function addInitialMessage() {
     const welcomeMessage = "Olá! Eu sou a **Jady**, sua assistente de apoio do **Quebre o Ciclo**. Minha missão é te orientar sobre direitos, leis (como a Lei Maria da Penha) e locais de ajuda. Estou aqui para você. Como posso te ajudar hoje?";
     displayMessage('ai', welcomeMessage);
     
-    // Adiciona o histórico inicial para que a IA saiba que já se apresentou
     chatHistory.push({ role: "model", parts: [{ text: welcomeMessage }] });
 }
 
@@ -239,7 +223,7 @@ sendButton.addEventListener('click', sendMessage);
 resetButton.addEventListener('click', resetChat);
 panicButton.addEventListener('click', handlePanicClick);
 darkModeToggle.addEventListener('click', toggleDarkMode);
-messagesArea.addEventListener('click', handleFeedbackClick); // Listener para os botões de feedback
+messagesArea.addEventListener('click', handleFeedbackClick); 
 
 userInput.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {

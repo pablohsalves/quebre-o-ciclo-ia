@@ -4,7 +4,7 @@ body {
     background-color: #e9ecef; 
     color: #343a40; 
     transition: background-color 0.3s, color 0.3s;
-    /* Reduzido para dar espaço à área fixa de input e disclaimer */
+    /* Adiciona padding para o footer fixo */
     padding-bottom: 120px; 
 }
 
@@ -16,27 +16,29 @@ body {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column;
-    /* Ajustado para ser flexível, mas limitado */
-    height: calc(100vh - 60px); 
+    /* Ajustado para centralizar o conteúdo do chat */
+    min-height: calc(100vh - 60px); 
     max-height: 900px;
     overflow: hidden; 
+    position: relative; /* Necessário para posicionamento do reset-button */
 }
 
 /* --- Área de Mensagens --- */
 #messages-area {
-    flex-grow: 1; /* Ocupa o espaço restante */
+    flex-grow: 1; 
     padding: 15px 20px;
     overflow-y: auto; 
     scroll-behavior: smooth;
+    /* Aumenta a altura mínima para forçar o scroll */
+    min-height: 400px; 
     position: relative;
 }
 
-/* Botão de Reset */
+/* Botão de Reset (Mantido no topo da área de mensagens) */
 #reset-button {
-    position: sticky;
+    position: absolute;
     top: 10px;
     right: 10px;
-    float: right;
     color: #ff69b4;
     cursor: pointer;
     font-size: 1.2em;
@@ -46,7 +48,7 @@ body {
     border-radius: 50%;
 }
 
-/* --- Estilos das Mensagens --- */
+/* --- Estilos das Mensagens (Mantido) --- */
 .message {
     margin-bottom: 15px;
     padding: 10px 15px;
@@ -55,7 +57,6 @@ body {
     line-height: 1.5;
 }
 
-/* Mensagens do Usuário */
 .user-message {
     background-color: #ff69b4; 
     color: white;
@@ -64,7 +65,6 @@ body {
     border-bottom-right-radius: 0;
 }
 
-/* Mensagens da Jady */
 .ai-message {
     background-color: #f1f3f5; 
     color: #343a40;
@@ -73,27 +73,7 @@ body {
     border-bottom-left-radius: 0;
 }
 
-/* Título e Descrição dos Recursos */
-.ai-message h3 {
-    color: #007bff;
-    margin-top: 0;
-    font-size: 1.1em;
-}
-
-/* Estilo para contatos (dentro da mensagem da Jady) */
-.resource-contact {
-    margin-top: 10px;
-    padding: 8px;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    display: block;
-    background-color: #ffffff;
-}
-.resource-contact strong {
-    color: #007bff;
-}
-
-/* --- Área de Input Fixa (Footer) --- */
+/* --- Área de Input Fixa (Footer) - CORREÇÃO CRÍTICA --- */
 #footer-fixed-container {
     position: fixed;
     bottom: 0;
@@ -102,17 +82,16 @@ body {
     width: 100%;
     max-width: 800px; 
     background: #ffffff;
-    padding: 10px 0 0; 
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
-    /* Adicionado borda arredondada no topo da área fixa */
+    padding: 10px 20px 0; /* Padding lateral corrigido */
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
     border-top-left-radius: 12px;
     border-top-right-radius: 12px;
 }
 
 #input-area {
-    display: flex;
-    align-items: center;
-    padding: 0 20px 5px; 
+    display: flex; /* Garante que input e botão fiquem lado a lado */
+    align-items: flex-end; /* Alinha o botão com o input */
+    padding-bottom: 5px; /* Espaçamento entre input e disclaimer */
 }
 
 #input-box-wrapper {
@@ -122,6 +101,8 @@ body {
     border-radius: 25px;
     overflow: hidden;
     background-color: #f8f9fa;
+    margin-right: 10px; /* Espaço entre o input e o botão circular */
+    height: 45px; /* Altura fixa para alinhar */
 }
 
 #user-input {
@@ -132,35 +113,30 @@ body {
     font-size: 1em;
     background-color: transparent;
 }
-/* Estilo para o placeholder, como na imagem e9d504.png */
+
 #user-input::placeholder {
     color: #888;
     font-style: italic;
 }
 
-
-#mic-wrapper {
-    padding: 0 10px;
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    color: #ff69b4; /* Cor do ícone do microfone */
-}
-
+/* Botão de Envio (Circular e separado) */
 #send-button {
     background-color: #ff69b4;
     color: white;
-    border: none;
-    padding: 10px 15px;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%; /* Torna-o circular */
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
-    font-size: 1em;
-    transition: background-color 0.3s;
+    font-size: 1.1em;
     flex-shrink: 0;
-    border-radius: 0 25px 25px 0;
+    transition: background-color 0.3s, transform 0.1s;
 }
 
-#send-button:hover {
-    background-color: #e65a9e;
+#send-button:active {
+    transform: scale(0.95); /* Efeito de clique */
 }
 
 /* Disclaimer */
@@ -168,12 +144,10 @@ body {
     font-size: 0.75em;
     color: #6c757d;
     text-align: center;
-    padding: 5px 20px 10px;
+    padding: 5px 0 10px; /* Padding ajustado */
 }
 
-/* --- Botões Flutuantes (Pânico e Dark Mode) --- */
-
-/* Botão de Pânico (Saída Rápida) */
+/* --- Botões Flutuantes (Pânico e Dark Mode) - Mantido --- */
 #panic-button {
     position: fixed;
     top: 20px;
@@ -190,14 +164,8 @@ body {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     font-size: 1.5em;
     z-index: 100;
-    transition: background-color 0.3s;
 }
 
-#panic-button:hover {
-    background-color: #c82333;
-}
-
-/* Botão de Modo Escuro (Dark Mode Toggle) */
 #dark-mode-toggle {
     position: fixed;
     top: 80px; 
@@ -214,76 +182,46 @@ body {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     font-size: 1.5em;
     z-index: 99;
-    transition: background-color 0.3s, transform 0.3s;
 }
 
-#dark-mode-toggle:hover {
-    background-color: #5a6268;
-    transform: scale(1.05);
-}
-
-/* --- Estilos do Modo Escuro (DARK MODE) --- */
+/* --- Estilos do Modo Escuro (DARK MODE) (Mantido) --- */
 body.dark-mode {
     background-color: #121212; 
     color: #f1f1f1; 
 }
-
 body.dark-mode #chat-container {
     background: #1e1e1e; 
-    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
 }
-
-body.dark-mode #reset-button {
-    background-color: rgba(30, 30, 30, 0.8);
-    color: #ff69b4;
-}
-
 body.dark-mode #footer-fixed-container {
     background: #1e1e1e;
-    box-shadow: 0 -2px 10px rgba(255, 255, 255, 0.05);
 }
-
 body.dark-mode #input-box-wrapper {
     background-color: #333333;
     border-color: #444444;
 }
-
 body.dark-mode #user-input {
     color: #f1f1f1;
 }
-
-body.dark-mode #user-input::placeholder {
-    color: #aaa;
-}
-
-body.dark-mode #mic-wrapper {
-    color: #ff69b4;
-}
-
-/* Mensagens da Jady no Dark Mode */
 body.dark-mode .ai-message {
     background-color: #333333; 
     color: #f1f1f1;
 }
-
-body.dark-mode .ai-message .resource-contact {
-    border-color: #444444;
-    background-color: #1e1e1e;
+body.dark-mode #reset-button {
+    background-color: rgba(30, 30, 30, 0.8);
 }
-
-/* Disclaimer no Dark Mode */
 body.dark-mode #disclaimer-bottom {
     color: #aaaaaa;
 }
 
 
-/* --- Correção Responsiva (Mobile) --- */
+/* --- Correção Responsiva (Mobile) - CORREÇÃO CRÍTICA --- */
 @media (max-width: 850px) {
     body {
         padding: 0;
         margin: 0;
         height: 100vh; 
         overflow: hidden; 
+        padding-bottom: 120px; /* Mantém o padding inferior para scroll */
     }
     
     #chat-container {
@@ -291,30 +229,28 @@ body.dark-mode #disclaimer-bottom {
         max-width: none;
         border-radius: 0;
         box-shadow: none;
-        margin-top: 0; 
-        /* Ocupa toda a tela menos o footer fixo */
-        height: calc(100% - 110px); 
+        margin: 0; /* Remove margem superior */
+        height: 100%; 
+        min-height: calc(100vh - 120px); /* Ocupa o espaço restante */
+    }
+
+    #messages-area {
+         padding: 15px 10px;
     }
 
     #footer-fixed-container {
         max-width: 100%; 
-        width: 100%;
         left: 0; 
-        /* Sem bordas arredondadas no mobile para cobrir toda a largura */
-        border-top-left-radius: 0;
-        border-top-right-radius: 0;
+        transform: translateX(0);
+        border-radius: 0; /* Ocupa toda a largura */
+        padding: 10px 10px 0; /* Padding lateral menor */
     }
     
     #input-area {
-        padding: 10px 15px 5px; 
-    }
-    
-    #disclaimer-bottom {
-        padding: 0 15px 10px; 
-        box-sizing: border-box; 
+        padding-bottom: 5px; 
     }
 
-    /* Botão de Pânico (topo direito) */
+    /* Ajuste fino dos botões flutuantes para mobile */
     #panic-button {
         top: 10px; 
         right: 10px;
@@ -323,9 +259,8 @@ body.dark-mode #disclaimer-bottom {
         font-size: 1.3em;
     }
     
-    /* Posição do Dark Mode no Mobile */
     #dark-mode-toggle {
-        top: 60px; 
+        top: 60px; /* Abaixo do botão de pânico */
         right: 10px;
         width: 40px;
         height: 40px;
