@@ -11,48 +11,92 @@ const sendButton = document.getElementById('send-button');
 const resetButton = document.getElementById('reset-button');
 const panicButton = document.getElementById('panic-button');
 const darkModeToggle = document.getElementById('dark-mode-toggle');
+const micWrapper = document.getElementById('mic-wrapper'); 
 
-// --- Funções de Renderização e Lógica do Chat (Omitidas para brevidade, mas mantidas as anteriores) ---
+// --- Configuração do Reconhecimento de Voz ---
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+let isListening = false;
+
+if (SpeechRecognition) {
+    recognition = new SpeechRecognition();
+    recognition.continuous = false; // Captura apenas uma frase por vez
+    recognition.lang = 'pt-BR'; 
+
+    recognition.onstart = function() {
+        isListening = true;
+        micWrapper.style.color = 'red'; // Indica que está gravando
+        userInput.placeholder = 'Ouvindo...';
+    };
+
+    recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        userInput.value = transcript;
+        sendMessage(); // Envia automaticamente após a transcrição
+    };
+
+    recognition.onerror = function(event) {
+        console.error('Erro de reconhecimento de voz:', event.error);
+        userInput.placeholder = 'Fale com a Jady...';
+        micWrapper.style.color = '#ff69b4'; 
+        isListening = false;
+        alert(`Erro de Microfone: ${event.error}. Verifique se as permissões estão ativadas e se você está usando HTTPS.`);
+    };
+
+    recognition.onend = function() {
+        if (isListening) {
+             micWrapper.style.color = '#ff69b4';
+             userInput.placeholder = 'Fale com a Jady...';
+             isListening = false;
+        }
+    };
+} else {
+    // Se o navegador não suportar, desativa visualmente o microfone
+    if (micWrapper) {
+        micWrapper.style.display = 'none';
+        console.warn('Reconhecimento de voz não suportado neste navegador.');
+    }
+}
+
+function startListening() {
+    if (recognition && !isListening) {
+        try {
+            recognition.start();
+        } catch (e) {
+            console.error('Reconhecimento de voz já iniciado ou erro:', e);
+        }
+    }
+}
+
+// --- Funções de Renderização e Lógica do Chat (Mantido) ---
 function displayMessage(role, text) {
-    // ... (função displayMessage anterior)
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${role}-message`;
     messageDiv.innerHTML = formatMarkdown(text); 
     messagesArea.appendChild(messageDiv);
-    
     messagesArea.scrollTop = messagesArea.scrollHeight;
-
     return messageDiv;
 }
 function formatMarkdown(text) {
-    // ... (função formatMarkdown anterior)
     text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     text = text.replace(/\n/g, '<br>');
     return text;
 }
 function addAiFeedbackButtons(messageDiv) {
-    // ... (função addAiFeedbackButtons anterior)
     const feedbackDiv = document.createElement('div');
     feedbackDiv.className = 'feedback-buttons';
-    feedbackDiv.innerHTML = `
-        <i class="fas fa-thumbs-up" data-feedback="positivo"></i>
-        <i class="fas fa-thumbs-down" data-feedback="negativo"></i>
-    `;
+    feedbackDiv.innerHTML = `<i class="fas fa-thumbs-up" data-feedback="positivo"></i><i class="fas fa-thumbs-down" data-feedback="negativo"></i>`;
     messageDiv.appendChild(feedbackDiv);
 }
+// Funções handleFeedbackClick, sendFeedback e resetChat (mantidas) ...
 function handleFeedbackClick(event) {
-    // ... (função handleFeedbackClick anterior)
     const icon = event.target;
     if (!icon.matches('.feedback-buttons i')) return;
     const feedbackType = icon.dataset.feedback;
     const feedbackButtons = icon.closest('.feedback-buttons');
     if (feedbackButtons.classList.contains('disabled')) return;
     feedbackButtons.classList.add('disabled');
-    feedbackButtons.querySelectorAll('i').forEach(i => {
-        i.style.color = '#ccc';
-        i.style.cursor = 'default';
-        i.style.pointerEvents = 'none';
-    });
+    feedbackButtons.querySelectorAll('i').forEach(i => { i.style.color = '#ccc'; i.style.cursor = 'default'; i.style.pointerEvents = 'none'; });
     icon.style.color = feedbackType === 'positivo' ? '#28a745' : '#dc3545';
     icon.style.fontWeight = 'bold';
     sendFeedback(feedbackType);
@@ -63,7 +107,6 @@ function handleFeedbackClick(event) {
     icon.parentNode.parentNode.appendChild(thanksMessage);
 }
 function sendFeedback(feedbackType) {
-    // ... (função sendFeedback anterior)
     fetch('/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -74,7 +117,6 @@ function sendFeedback(feedbackType) {
     .catch(error => console.error('Erro ao enviar feedback:', error));
 }
 async function sendMessage() {
-    // ... (função sendMessage anterior)
     const message = userInput.value.trim();
     if (!message) return;
     userInput.value = '';
@@ -109,7 +151,6 @@ async function sendMessage() {
     }
 }
 function resetChat() {
-    // ... (função resetChat anterior)
     if (confirm('Tem certeza que deseja começar uma nova conversa? O histórico será perdido.')) {
         chatHistory = [];
         messagesArea.innerHTML = '';
@@ -119,6 +160,7 @@ function resetChat() {
     }
 }
 
+
 // --- Funções UX/Acessibilidade ---
 
 function toggleDarkMode() {
@@ -126,7 +168,6 @@ function toggleDarkMode() {
     document.body.classList.toggle('dark-mode', isDarkMode);
     localStorage.setItem('darkMode', isDarkMode ? 'enabled' : 'disabled');
 
-    // CORREÇÃO: Altera o ícone corretamente
     const icon = darkModeToggle.querySelector('i');
     if (isDarkMode) {
         icon.classList.remove('fa-moon');
@@ -142,26 +183,19 @@ function handlePanicClick() {
 }
 
 function initializeApp() {
-    // 1. Aplica o Modo Escuro se estiver salvo
     if (isDarkMode) {
         document.body.classList.add('dark-mode');
-        // CORREÇÃO: Aplica o ícone correto na inicialização
         const icon = darkModeToggle.querySelector('i');
         icon.classList.remove('fa-moon');
         icon.classList.add('fa-sun');
     }
-    
-    // 2. Adiciona a mensagem inicial da Jady
     addInitialMessage();
-    
-    // 3. Garante que a área de mensagens esteja visível (foco no input)
     userInput.focus();
 }
 
 function addInitialMessage() {
     const welcomeMessage = "Olá! Eu sou a **Jady**, sua assistente de apoio do **Quebre o Ciclo**. Minha missão é te orientar sobre direitos, leis (como a Lei Maria da Penha) e locais de ajuda. Estou aqui para você. Como posso te ajudar hoje?";
     displayMessage('ai', welcomeMessage);
-    
     chatHistory.push({ role: "model", parts: [{ text: welcomeMessage }] });
 }
 
@@ -172,6 +206,11 @@ resetButton.addEventListener('click', resetChat);
 panicButton.addEventListener('click', handlePanicClick);
 darkModeToggle.addEventListener('click', toggleDarkMode);
 messagesArea.addEventListener('click', handleFeedbackClick); 
+
+// Listener para o microfone
+if (micWrapper) {
+    micWrapper.addEventListener('click', startListening);
+}
 
 userInput.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {
