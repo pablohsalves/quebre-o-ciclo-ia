@@ -130,6 +130,7 @@ body {
     color: #ff69b4; 
     font-size: 1.1em;
     flex-shrink: 0;
+    transition: all 0.3s ease; /* Adiciona transição para o efeito de pulsação */
 }
 #send-button {
     background-color: #ff69b4;
@@ -192,6 +193,47 @@ body {
     z-index: 999;
 }
 
+/* --- NOVO: ESTILOS PARA MICROFONE ATIVO (PULSANTE) --- */
+
+/* Define a animação de pulsação */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.5);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(255, 0, 0, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 0, 0, 0);
+    }
+}
+
+/* Estilo para o microfone quando está ATIVO (Ouvindo) */
+#mic-wrapper.listening {
+    color: white; /* Muda a cor do ícone para branco para se destacar no fundo vermelho */
+    background-color: #dc3545; /* Fundo vermelho sólido */
+    border-radius: 50%;
+    width: 35px; /* Define um tamanho fixo para o círculo */
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 0;
+    /* Ajusta a margem para compensar o tamanho do ícone */
+    margin-right: 15px; 
+    
+    /* Aplica o efeito de pulsação */
+    animation: pulse 1.5s infinite;
+}
+
+/* Garante que o ícone do microfone esteja centralizado dentro do wrapper */
+#mic-wrapper.listening i {
+    position: relative;
+    z-index: 2;
+}
+
+
 /* --- Estilos do Modo Escuro (DARK MODE) (Corrigido) --- */
 body.dark-mode {
     background-color: #121212; 
@@ -248,4 +290,10 @@ body.dark-mode #dark-mode-toggle {
     #panic-button { top: 10px; right: 10px; width: 40px; height: 40px; font-size: 1.3em; }
     #dark-mode-toggle { top: 60px; right: 10px; width: 40px; height: 40px; font-size: 1.2em; }
     #disclaimer-bottom { padding: 5px 10px 10px; }
+    
+    /* Ajuste do microfone em modo listening no mobile, se necessário. */
+    #mic-wrapper.listening {
+        width: 30px; 
+        height: 30px;
+    }
 }
