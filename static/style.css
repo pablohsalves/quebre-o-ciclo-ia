@@ -1,10 +1,10 @@
 /* --- Estilos Globais e do Chat --- */
 body {
     font-family: 'Arial', sans-serif;
-    background-color: #e9ecef; /* Fundo da página */
+    background-color: #e9ecef; 
     color: #343a40; 
     transition: background-color 0.3s, color 0.3s;
-    /* CORREÇÃO: Remove margens/padding no body e oculta a barra de rolagem do body */
+    /* Garante que o body não tem scroll e ocupa toda a tela */
     margin: 0;
     padding: 0;
     height: 100vh;
@@ -13,34 +13,34 @@ body {
 
 #chat-container {
     max-width: 800px;
-    /* CORREÇÃO: Ajusta margin para centralizar sem quebrar o layout fixo */
-    margin: 30px auto 0; 
-    background: #ffffff;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    margin: 0px auto 0; /* Centraliza horizontalmente e remove margem superior */
+    /* CORREÇÃO: Remove fundo branco e contorno (shadow e border-radius) do container principal */
+    background: transparent;
+    border-radius: 0; 
+    box-shadow: none; 
     display: flex;
     flex-direction: column;
-    /* Ocupa todo o espaço vertical disponível, subtraindo o footer fixo e margem */
-    height: calc(100vh - 150px); 
+    /* Ocupa todo o espaço vertical disponível, subtraindo o footer fixo */
+    height: calc(100vh - 120px); 
     position: relative; 
-    overflow: hidden; /* Oculta barra de rolagem do container, deixando apenas a messages-area */
+    overflow: hidden;
 }
 
 /* --- Área de Mensagens --- */
 #messages-area {
     flex-grow: 1; 
     padding: 15px 20px;
-    overflow-y: auto; /* Permite scroll APENAS na área de mensagens */
+    overflow-y: auto; 
     scroll-behavior: smooth;
     min-height: 400px; 
     position: relative;
-    /* CORREÇÃO: Fundo da área de mensagens igual ao fundo da página, para remover a separação */
+    /* Fundo da área de mensagens igual ao fundo da página (como solicitado) */
     background-color: #e9ecef; 
-    /* Adiciona um padding inferior para que a última mensagem não fique atrás do input */
-    padding-bottom: 120px; 
+    /* Padding inferior ajustado */
+    padding-bottom: 30px; 
 }
 
-/* Botão de Reset */
+/* Botão de Reset (Mantido) */
 #reset-button {
     position: absolute;
     top: 10px;
@@ -50,7 +50,7 @@ body {
     font-size: 1.2em;
     padding: 5px;
     z-index: 10;
-    background-color: rgba(255, 255, 255, 0.8);
+    background-color: rgba(233, 236, 239, 0.8); /* Fundo sutil */
     border-radius: 50%;
 }
 
@@ -62,7 +62,6 @@ body {
     max-width: 85%;
     line-height: 1.5;
 }
-
 .user-message {
     background-color: #ff69b4; 
     color: white;
@@ -70,21 +69,18 @@ body {
     text-align: right;
     border-bottom-right-radius: 0;
 }
-
-/* CORREÇÃO: Mensagens da Jady (fundo agora é transparente/igual ao body) */
+/* Mensagens da Jady - Fundo sutil para destacá-las */
 .ai-message {
-    background-color: transparent; 
+    background-color: #ffffff; 
     color: #343a40;
     margin-right: auto;
     text-align: left;
     border-bottom-left-radius: 0;
-    /* Adiciona uma sombra para destacá-la ligeiramente do fundo */
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); 
-    background-color: #ffffff;
+    /* CORREÇÃO: Removeu a shadow, mantém a cor de fundo clara */
+    box-shadow: none; 
 }
 
 /* --- Área de Input Fixa (Footer) --- */
-
 #footer-fixed-container {
     position: fixed;
     bottom: 0;
@@ -92,11 +88,12 @@ body {
     transform: translateX(-50%);
     width: 100%;
     max-width: 800px; 
-    background: #e9ecef; /* CORREÇÃO: Fundo do footer igual ao fundo da página */
+    /* CORREÇÃO: Fundo do footer igual ao fundo da página, sem bordas/sombras */
+    background: #e9ecef;
     padding: 10px 20px 0; 
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-    border-top-left-radius: 12px;
-    border-top-right-radius: 12px;
+    box-shadow: none;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
     z-index: 50; 
 }
 
@@ -105,11 +102,11 @@ body {
     display: flex; 
     align-items: center;
     padding: 5px; 
-    background-color: #ffffff; /* Fundo interno da barra */
+    background-color: #ffffff; 
     border: 1px solid #ced4da;
     border-radius: 25px; 
     margin-bottom: 5px; 
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); 
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); /* Sombra suave para o wrapper */
     height: 45px; 
 }
 
@@ -123,9 +120,9 @@ body {
     height: 100%; 
 }
 
-/* Microfone */
+/* Microfone e Envio (Espaçamento) */
 #mic-wrapper {
-    /* CORREÇÃO: Aumenta o padding à direita para afastar BASTANTE do botão de envio */
+    /* Espaçamento grande entre microfone e envio */
     padding: 0 20px 0 10px; 
     display: flex;
     align-items: center;
@@ -134,8 +131,6 @@ body {
     font-size: 1.1em;
     flex-shrink: 0;
 }
-
-/* Botão de Envio */
 #send-button {
     background-color: #ff69b4;
     color: white;
@@ -152,7 +147,7 @@ body {
     margin-right: 5px; 
 }
 
-/* Disclaimer */
+/* Disclaimer - CORREÇÃO: Remove a borda/contorno ao redor */
 #disclaimer-bottom {
     font-size: 0.75em;
     color: #6c757d;
@@ -160,16 +155,53 @@ body {
     padding: 5px 0 10px; 
 }
 
-/* --- Estilos do Modo Escuro (DARK MODE) --- */
+/* --- Botões Flutuantes (Pânico e Dark Mode) - POSICIONAMENTO CRÍTICO --- */
+#panic-button {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    background-color: #dc3545; 
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    font-size: 1.5em;
+    z-index: 1000; /* Garante que fique visível sobre tudo */
+}
+
+#dark-mode-toggle {
+    position: fixed;
+    top: 80px; 
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    background-color: #6c757d; 
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    font-size: 1.5em;
+    z-index: 999;
+}
+
+/* --- Estilos do Modo Escuro (DARK MODE) (Corrigido) --- */
 body.dark-mode {
     background-color: #121212; 
     color: #f1f1f1; 
 }
 body.dark-mode #chat-container {
-    background: #1e1e1e; 
+    background: transparent; 
 }
 body.dark-mode #messages-area {
-    background-color: #121212; /* Fundo da conversa escuro */
+    background-color: #121212;
 }
 body.dark-mode #footer-fixed-container {
     background: #121212;
@@ -182,12 +214,13 @@ body.dark-mode #user-input {
     color: #f1f1f1;
 }
 body.dark-mode .ai-message {
-    background-color: #1e1e1e; /* Fundo da mensagem da IA escuro */
+    background-color: #1e1e1e;
     color: #f1f1f1;
-    box-shadow: 0 1px 2px rgba(255, 255, 255, 0.1); 
+    box-shadow: none; 
 }
 body.dark-mode #reset-button {
     background-color: rgba(30, 30, 30, 0.8);
+    color: #ff69b4;
 }
 body.dark-mode #disclaimer-bottom {
     color: #aaaaaa;
@@ -202,8 +235,7 @@ body.dark-mode #dark-mode-toggle {
 @media (max-width: 850px) {
     #chat-container {
         margin: 0; 
-        border-radius: 0;
-        box-shadow: none;
+        height: calc(100vh - 120px); 
     }
     #footer-fixed-container {
         padding: 10px 0 0; 
