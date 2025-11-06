@@ -134,32 +134,36 @@ body {
     height: 45px; 
 }
 
+/* REPOSICIONAMENTO: O input de texto agora terá padding no início */
 #user-input {
     flex-grow: 1;
-    padding: 0 10px; 
+    /* Adicionado padding à esquerda para dar espaço, removido o padding da direita para dar espaço ao mic */
+    padding: 0 5px 0 20px; 
     border: none;
     outline: none;
     font-size: 1em;
     background-color: transparent;
     height: 100%; 
+    order: 1; /* Garante que o input venha primeiro */
 }
 
-/* Microfone e Envio (Espaçamento) */
+/* REPOSICIONAMENTO: O wrapper do microfone agora ficará no final, antes do send-button */
 #mic-wrapper {
-    padding: 0 20px 0 10px; 
+    padding: 0 10px; 
     display: flex;
     align-items: center;
-    justify-content: center; /* Centraliza o ícone */
+    justify-content: center; 
     cursor: pointer;
     color: #ff69b4; 
     font-size: 1.1em;
     flex-shrink: 0;
     transition: all 0.3s ease; 
-    
-    /* Garante o tamanho padrão para ser substituído pelo .listening */
     width: 35px; 
     height: 35px;
+    order: 2; /* Garante que o microfone venha depois do input */
 }
+
+
 #send-button {
     background-color: #ff69b4;
     color: white;
@@ -174,6 +178,7 @@ body {
     flex-shrink: 0;
     transition: background-color 0.3s, transform 0.1s;
     margin-right: 5px; 
+    order: 3; /* Garante que o botão de envio venha por último */
 }
 
 /* Disclaimer */
@@ -252,7 +257,7 @@ body {
     position: relative;
     padding: 0;
     animation: pulse 1.5s infinite;
-    margin-right: 15px;
+    margin-right: 0; 
 }
 
 /* Garante que o ícone do microfone esteja centralizado dentro do wrapper */
