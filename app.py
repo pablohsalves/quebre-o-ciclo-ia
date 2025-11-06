@@ -1,300 +1,158 @@
 import os
-import datetime
 import json
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+import logging # <-- NOVO: Para registrar logs de feedback
+from flask import Flask, render_template, request, jsonify, redirect, url_for
 from google import genai
 from google.genai import types
 
-# --- Configurações Iniciais ---
+# --- 1. Configuração do Logger ---
+# Configuração básica de Logging para aparecer nos logs do Render
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s') 
+logger = logging.getLogger(__name__)
+
+# --- 2. Configuração do Flask e Gemini ---
 app = Flask(__name__)
-# Chave de sessão para login admin
-app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'sua_chave_secreta_padrao') 
 
-# Credenciais Admin (Mudar no ambiente de produção)
-ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
-ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'senha123')
-
-# Configuração Gemini API
+# Variável de ambiente (Chave da API)
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 if not GEMINI_API_KEY:
-    raise ValueError("A variável de ambiente GEMINI_API_KEY não está definida.")
+    logger.error("A variável de ambiente GEMINI_API_KEY não está configurada.")
+    # Neste ambiente de desenvolvimento/deploy, é melhor levantar um erro se a chave estiver faltando.
+    # raise ValueError("GEMINI_API_KEY não configurada.")
+    # No entanto, vamos simular a inicialização para que o restante do código compile
+    # e depender da verificação dentro da rota para evitar falhas imediatas.
+    pass 
 
-client = genai.Client(api_key=GEMINI_API_KEY)
+# Inicializa o cliente Gemini
+try:
+    client = genai.Client(api_key=GEMINI_API_KEY)
+except Exception as e:
+    logger.error(f"Erro ao inicializar o cliente Gemini: {e}")
+    client = None
 
-# --- Caminhos de Arquivo ---
-KNOWLEDGE_FILE = 'knowledge.txt'
-LOGS_FILE = 'logs.txt'
-FEEDBACK_FILE = 'feedback.txt'
-RESOURCES_FILE = 'resources.json' 
+# Configuração do modelo e do sistema
+MODEL_NAME = "gemini-2.5-flash"
+SYSTEM_INSTRUCTION = """
+Você é a Jady, uma assistente virtual de apoio para mulheres em situação de vulnerabilidade, violência doméstica e violência de gênero, parte do projeto "Quebre o Ciclo".
 
-# NOVO: Variável global para rastrear problemas de arquivo que serão exibidos no Admin
-FILE_ERROR_MESSAGE = ""
+Seu principal objetivo é fornecer informações de forma clara, acolhedora e empática.
 
-# Garante que os arquivos existam e inicializa RESOURCES_FILE
-def initialize_files():
-    """Garante que os arquivos necessários existam e os inicializa se for a primeira vez."""
-    global FILE_ERROR_MESSAGE
-    
-    # Lista de arquivos que DEVEM EXISTIR e precisam de conteúdo inicial
-    files_to_initialize = {
-        KNOWLEDGE_FILE: "Você é a Jady, assistente de apoio do Quebre o Ciclo. Sempre responda em português. Seu objetivo é fornecer informações sobre direitos, leis (como Lei Maria da Penha) e locais de ajuda. Mantenha o tom de voz acolhedor, empático e informativo. Sempre reforce para a usuária buscar ajuda profissional ou ligar 190 em caso de emergência. Nunca se apresente como terapeuta ou substituta de apoio legal/policial.",
-        RESOURCES_FILE: None 
-    }
-    
-    # 1. Inicializa KNOWLEDGE e RESOURCES (devem existir)
-    for filename, default_content in files_to_initialize.items():
-        if not os.path.exists(filename):
-            try:
-                if filename == RESOURCES_FILE:
-                    default_resources = {
-                        "title": "Contatos e Fontes de Apoio (Editável no Admin)",
-                        "description": "Estes são contatos importantes que você pode usar para apoio imediato.",
-                        "contacts": [
-                            {"name": "Emergência (Polícia)", "value": "190"},
-                            {"name": "Central de Atendimento à Mulher", "value": "180"},
-                            {"name": "Conselho Tutelar", "value": "Disque 100"},
-                            {"name": "CRAS", "value": "Busque o endereço mais próximo no Google"}
-                        ]
-                    }
-                    with open(RESOURCES_FILE, 'w', encoding='utf-8') as f:
-                        json.dump(default_resources, f, ensure_ascii=False, indent=4)
-                else: # KNOWLEDGE_FILE
-                    with open(filename, 'w', encoding='utf-8') as f:
-                        f.write(default_content)
-            except Exception as e:
-                FILE_ERROR_MESSAGE += f"ERRO FATAL DE INICIALIZAÇÃO: Não foi possível criar/escrever em {filename}. ({e}). "
+Seu foco deve ser em:
+1.  **Acolhimento e Empatia:** Use linguagem gentil e de apoio.
+2.  **Informação Legal:** Explique direitos, a Lei Maria da Penha (Lei nº 11.340/2006) e o que constitui violência doméstica e familiar.
+3.  **Encaminhamento de Ajuda:** Forneça números de emergência (como 180, 190), locais de apoio (Delegacias da Mulher, Centros de Referência) e recursos online relevantes.
+4.  **Segurança Digital:** Nunca peça dados pessoais. Se o usuário mencionar uma situação de risco iminente, reforce a necessidade de ligar para o 190 imediatamente.
+5.  **Formato:** Use negrito (**) para destacar informações importantes e listas para clareza (use o formato Markdown).
 
+Mantenha as respostas concisas e diretas, mas sempre com um tom de apoio.
+"""
 
-    # 2. Garante a existência dos arquivos de LOGS e FEEDBACK, mas COM TRATAMENTO DE ERRO
-    for filename in [LOGS_FILE, FEEDBACK_FILE]:
-        if not os.path.exists(filename):
-            try:
-                with open(filename, 'w', encoding='utf-8') as f:
-                    f.write(f"--- {filename} Iniciado em {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ---\n")
-            except Exception as e:
-                # AVISO: A escrita falhou. O admin não conseguirá gerenciar estes logs.
-                print(f"AVISO: Falha ao criar {filename}. Erro: {e}")
+# Configuração de Geração (para garantir a segurança e tom)
+generation_config = types.GenerateContentConfig(
+    system_instruction=SYSTEM_INSTRUCTION,
+    temperature=0.7, # Um pouco de criatividade, mas mantendo a factualidade
+)
 
-initialize_files() # Chama a função de inicialização na startup
+# --- 3. Rotas do Flask ---
 
-# --- Funções Auxiliares de Arquivo ---
-def get_system_instruction():
-    """Lê e retorna a instrução do sistema do arquivo."""
-    try:
-        with open(KNOWLEDGE_FILE, 'r', encoding='utf-8') as f:
-            return f.read().strip()
-    except FileNotFoundError:
-        return "Você é a Jady, assistente de apoio do Quebre o Ciclo. Por favor, avise o administrador que o arquivo knowledge.txt não foi encontrado."
-
-def get_resources():
-    """Lê e retorna o conteúdo do resources.json."""
-    try:
-        with open(RESOURCES_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {"title": "Recursos Indisponíveis", "description": "Erro ao carregar recursos.", "contacts": []}
-
-def log_conversation(user_message, ai_response):
-    """Registra a conversa (usuário e IA) no arquivo de logs."""
-    timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    log_entry = (
-        f"[{timestamp}]\n"
-        f"  Usuário: {user_message}\n"
-        f"  Jady: {ai_response}\n"
-        f"----------------------------------------\n"
-    )
-    try:
-        with open(LOGS_FILE, 'a', encoding='utf-8') as f:
-            f.write(log_entry)
-    except IOError as e:
-        print(f"ERRO: Não foi possível escrever no arquivo de logs ({LOGS_FILE}): {e}")
-
-def log_feedback(feedback_type, user_prompt, ai_response):
-    """Registra o feedback do usuário no arquivo."""
-    timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    feedback_entry = (
-        f"[{timestamp}] Tipo: {feedback_type.upper()}\n"
-        f"  Prompt: {user_prompt}\n"
-        f"  Resposta da Jady: {ai_response}\n"
-        f"----------------------------------------\n"
-    )
-    try:
-        with open(FEEDBACK_FILE, 'a', encoding='utf-8') as f:
-            f.write(feedback_entry)
-    except IOError as e:
-        print(f"ERRO: Não foi possível escrever no arquivo de feedback ({FEEDBACK_FILE}): {e}")
-
-# --- Funções do Gemini (Mantidas) ---
-def start_chat():
-    resources = get_resources()
-    resources_text = "\n\n--- RECURSOS DE APOIO ---\n"
-    for contact in resources.get('contacts', []):
-        resources_text += f"- {contact['name']}: {contact['value']}\n"
-        
-    system_instruction = get_system_instruction() + resources_text
-    
-    return client.chats.create(
-        model='gemini-2.5-flash',
-        config=types.GenerateContentConfig(
-            system_instruction=system_instruction
-        )
-    )
-
-# --- Rotas do Chat e Feedback (Mantidas) ---
 @app.route('/')
 def index():
+    """Renderiza a página inicial do chat."""
     return render_template('index.html')
 
 @app.route('/chat', methods=['POST'])
-def chat_endpoint():
-    data = request.json
-    user_message = data.get('message', '')
-    history = data.get('history', [])
-    
-    chat = start_chat()
-    for item in history:
-        if item['role'] == 'model' and item['parts'][0]['text'].startswith("Olá! Eu sou a **Jady**"):
-            continue
-        chat.history.append(types.Content(**item))
+def chat():
+    """
+    Processa a requisição de chat do usuário, mantém o histórico 
+    e retorna a resposta da IA.
+    """
+    if not client:
+        return jsonify({"response": "Desculpe, a conexão com a IA não está ativa. Por favor, tente mais tarde."}), 503
 
     try:
-        response = chat.send_message(user_message)
-        ai_response = response.text
+        data = request.get_json()
+        user_message = data.get('message')
+        history = data.get('history', [])
+
+        if not user_message:
+            return jsonify({"response": "Por favor, envie uma mensagem."}), 400
+
+        # Mapeia o histórico para o formato Gemini Content
+        chat_history = [
+            types.Content.from_dict(item) 
+            for item in history if 'role' in item and 'parts' in item
+        ]
         
-        log_conversation(user_message, ai_response)
+        # Cria uma nova sessão de chat com histórico
+        chat_session = client.chats.create(
+            model=MODEL_NAME,
+            history=chat_history,
+            config=generation_config
+        )
+
+        # Envia a mensagem do usuário (já incluída no histórico da sessão)
+        response = chat_session.send_message(user_message)
         
-        last_user_prompt = user_message 
-        
-        return jsonify({
-            'response': ai_response,
-            'user_prompt': last_user_prompt,
-            'ai_response_text': ai_response 
-        })
-    
+        return jsonify({"response": response.text})
+
     except Exception as e:
-        print(f"Erro ao comunicar com o Gemini: {e}")
-        return jsonify({'response': "Desculpe, houve um erro técnico ao comunicar com a assistente. Por favor, tente novamente ou ligue 190."}), 500
+        logger.error(f"Erro ao processar requisição de chat: {e}", exc_info=True)
+        return jsonify({"response": "Desculpe, ocorreu um erro interno ao processar sua solicitação."}), 500
 
+
+# --- 4. Rota de Feedback (CORRIGIDA) ---
 @app.route('/feedback', methods=['POST'])
-def receive_feedback():
-    data = request.json
-    feedback_type = data.get('type') 
-    user_prompt = data.get('user_prompt')
-    ai_response_text = data.get('ai_response_text')
-    
-    if feedback_type and user_prompt and ai_response_text:
-        log_feedback(feedback_type, user_prompt, ai_response_text)
-        return jsonify({'status': 'success', 'message': f'Feedback {feedback_type} registrado.'})
-    
-    return jsonify({'status': 'error', 'message': 'Dados de feedback inválidos.'}), 400
-
-
-# --- Rotas Admin (Atualizadas para Recursos e Logs Robustos) ---
-@app.route('/admin', methods=['GET', 'POST'])
-def admin_login():
-    if 'logged_in' in session:
-        return redirect(url_for('admin_painel'))
-
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        
-        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
-            session['logged_in'] = True
-            return redirect(url_for('admin_painel'))
-        else:
-            return render_template('admin_login.html', error="Credenciais inválidas.")
-            
-    return render_template('admin_login.html')
-
-@app.route('/admin/painel', methods=['GET', 'POST'])
-def admin_painel():
-    if 'logged_in' not in session:
-        return redirect(url_for('admin_login'))
-
-    system_instruction = get_system_instruction()
-    resources_content = json.dumps(get_resources(), ensure_ascii=False, indent=4) 
-    
-    # Usa a variável global de erro de arquivo como mensagem inicial
-    message = FILE_ERROR_MESSAGE 
-    
-    if request.method == 'POST':
-        # ... (Processamento de Formulário POST para Knowledge e Resources - Mantido) ...
-        if 'knowledge' in request.form:
-            new_instruction = request.form['knowledge']
-            try:
-                with open(KNOWLEDGE_FILE, 'w', encoding='utf-8') as f:
-                    f.write(new_instruction)
-                system_instruction = new_instruction 
-                message = "Instrução da Jady (knowledge.txt) atualizada com sucesso!"
-            except IOError:
-                message = "Erro ao salvar o arquivo knowledge.txt."
-        
-        if 'resources' in request.form:
-            new_resources_content = request.form['resources']
-            try:
-                json.loads(new_resources_content) 
-                with open(RESOURCES_FILE, 'w', encoding='utf-8') as f:
-                    f.write(new_resources_content)
-                resources_content = new_resources_content 
-                message = "Fontes de Apoio (resources.json) atualizadas com sucesso!"
-            except json.JSONDecodeError:
-                message = "ERRO: O conteúdo enviado para Fontes de Apoio não é um JSON válido. Por favor, verifique a sintaxe."
-            except IOError:
-                message = "Erro ao salvar o arquivo resources.json."
-        
-        # Lógica de reset (logs e feedback)
-        if 'reset_logs' in request.form:
-            try:
-                # Tenta resetar o arquivo de Logs
-                with open(LOGS_FILE, 'w', encoding='utf-8') as f:
-                    f.write(f"--- Logs Resetados em {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ---\n")
-                message = "Logs de conversa resetados com sucesso!"
-            except IOError:
-                message = "ERRO: Falha ao resetar o arquivo de logs. O arquivo pode ser somente leitura no servidor."
-        
-        if 'reset_feedback' in request.form: 
-            try:
-                # Tenta resetar o arquivo de Feedback
-                with open(FEEDBACK_FILE, 'w', encoding='utf-8') as f:
-                    f.write(f"--- Feedback Resetado em {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ---\n")
-                message = "Logs de feedback resetados com sucesso!"
-            except IOError:
-                message = "ERRO: Falha ao resetar o arquivo de feedback. O arquivo pode ser somente leitura no servidor."
-                
-    # Lê os logs e feedback para exibição (AGORA MAIS ROBUSTO)
+def feedback():
+    """
+    Recebe e registra o feedback do usuário sobre a última resposta da IA.
+    """
     try:
-        with open(LOGS_FILE, 'r', encoding='utf-8') as f:
-            logs_content = f.read()
-    except FileNotFoundError:
-        logs_content = "ARQUIVO LOGS.TXT NÃO ENCONTRADO. PODE SER UM PROBLEMA DE PERMISSÃO NO DEPLOY."
-    except IOError:
-         logs_content = "ERRO DE LEITURA DO LOGS.TXT. O arquivo pode ser somente leitura no servidor."
+        data = request.get_json()
+        
+        # 1. Validação e extração de dados
+        feedback_type = data.get('type')
+        user_prompt = data.get('user_prompt', 'N/A')
+        ai_response_text = data.get('ai_response_text', 'N/A')
 
-    try:
-        with open(FEEDBACK_FILE, 'r', encoding='utf-8') as f:
-            feedback_content = f.read()
-    except FileNotFoundError:
-        feedback_content = "ARQUIVO FEEDBACK.TXT NÃO ENCONTRADO. PODE SER UM PROBLEMA DE PERMISSÃO NO DEPLOY."
-    except IOError:
-        feedback_content = "ERRO DE LEITURA DO FEEDBACK.TXT. O arquivo pode ser somente leitura no servidor."
+        if not feedback_type:
+            logger.warning("Feedback recebido sem tipo.")
+            return jsonify({"status": "error", "message": "Tipo de feedback ausente."}), 400
+
+        # 2. Registro do Log
+        # Usamos o logger para registrar o evento. Isso aparecerá nos logs do Render.
+        # Limitamos a 80 caracteres para manter o log legível
+        log_message = (
+            f"FEEDBACK_REGISTRADO: Tipo={feedback_type} | "
+            f"Prompt='{user_prompt[:80].replace('\n', ' ')}...' | "
+            f"Response='{ai_response_text[:80].replace('\n', ' ')}...'"
+        )
+        
+        # Registra como INFO para fácil rastreamento
+        logger.info(log_message) 
+
+        # 3. Retorno para o Front-End
+        return jsonify({"status": "success", "message": "Feedback registrado com sucesso.", "type": feedback_type}), 200
+
+    except Exception as e:
+        logger.error(f"Erro ao processar feedback: {e}", exc_info=True)
+        return jsonify({"status": "error", "message": "Erro interno ao processar feedback."}), 500
+
+# --- 5. Rota de Pânico (Redirecionamento) ---
+@app.route('/panic', methods=['POST'])
+def panic_redirect():
+    """
+    Rota simples para acionar o redirecionamento imediato em caso de emergência.
+    """
+    logger.warning("Botão de Pânico acionado. Redirecionando para o Google.")
+    # O redirecionamento é feito principalmente pelo JS do cliente,
+    # mas esta rota pode ser um fallback para registro de log no servidor.
+    return jsonify({"status": "redirect", "url": "https://www.google.com"}), 200
 
 
-    return render_template(
-        'admin_painel.html', 
-        system_instruction=system_instruction, 
-        resources_content=resources_content, 
-        logs_content=logs_content, 
-        feedback_content=feedback_content,
-        message=message # Inclui mensagem de erro ou sucesso
-    )
-
-
-@app.route('/admin/logout')
-def admin_logout():
-    session.pop('logged_in', None)
-    return redirect(url_for('admin_login'))
-
+# --- 6. Execução ---
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=os.environ.get('PORT', 5000), debug=True)
+    # Porta para execução local e para o Render
+    port = int(os.environ.get('PORT', 5000))
+    # Em produção (Render), use host='0.0.0.0'
+    app.run(host='0.0.0.0', port=port)
