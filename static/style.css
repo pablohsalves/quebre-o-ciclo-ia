@@ -1,42 +1,40 @@
 /* Paleta de Cores Light Mode Acolhedor */
 :root {
-    --bg-light: #fffafa; /* Branco com toque de rosa clarinho (Fundo Geral) */
+    --bg-light: #fffafa; 
     --text-dark: #1f1f1f;
     --brand-color: #ff69b4; /* Rosa Choque (Botões/Destaque) */
-    --ia-bubble: #f1f0f0; /* Cinza muito claro (Bolha IA) */
-    --user-bubble: #ffbcd9; /* Rosa suave (Bolha Usuário) */
+    --ia-bubble: #f1f0f0; 
+    --user-bubble: #ffbcd9; 
     --input-bg: #ffffff;
     --border-color: #e0e0e0;
+    --mic-active-color: #ff0000; /* Vermelho para gravação */
 }
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: var(--bg-light); 
     color: var(--text-dark);
-    /* CORREÇÃO CHAVE: Usar Flexbox para empilhar e centralizar */
     display: flex;
     flex-direction: column;
-    align-items: center; 
+    justify-content: center;
+    align-items: center;
     min-height: 100vh;
     margin: 0;
-    padding-bottom: 20px; /* Espaçamento abaixo do disclaimer no desktop */
+    padding-bottom: 20px; 
 }
 
 #chat-container {
     width: 100%;
     max-width: 800px; 
-    
-    /* CORREÇÃO CHAVE: Permite que o Flexbox controle a altura */
     height: 100%; 
     flex-grow: 1; 
-    
     background-color: #ffffff;
     border-radius: 12px;
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08); 
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    margin-top: 20px; /* Pequena margem superior no desktop */
+    margin-top: 20px; 
 }
 
 /* Área de Mensagens (com botão de reset flutuante) */
@@ -79,16 +77,12 @@ body {
     border-radius: 20px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
-
-/* Mensagens da IA: Fundo claro sutil */
 .ia-message {
     background-color: var(--ia-bubble); 
     color: var(--text-dark);
     border-radius: 20px 20px 20px 4px;
     margin-right: auto;
 }
-
-/* Mensagens da Usuária: Cor de destaque Rosa suave */
 .user-message {
     background-color: var(--user-bubble); 
     color: var(--text-dark); 
@@ -100,7 +94,6 @@ body {
 #input-area {
     padding: 15px 20px;
     background-color: var(--input-bg);
-    /* CORREÇÃO: Remove a borda superior (a "linha") */
     border-top: none; 
 }
 
@@ -128,13 +121,40 @@ body {
     color: #a0a0a0;
 }
 
+/* NOVO: Wrapper para o Microfone para aplicar o círculo pulsante */
+#mic-wrapper {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 40px; /* Garante espaço para o círculo */
+    height: 40px;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
 /* Ícone de Microfone */
 #mic-icon {
     color: var(--brand-color);
     font-size: 1.2em;
-    margin-right: 10px;
-    cursor: pointer;
+    z-index: 2; /* Fica acima do círculo */
     transition: color 0.2s;
+}
+
+/* Elemento do Círculo Pulsante (visível apenas durante a gravação) */
+#mic-wrapper.recording::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 30px;
+    height: 30px;
+    background-color: var(--mic-active-color);
+    border-radius: 50%;
+    opacity: 0.2;
+    animation: pulse-circle 1.5s infinite ease-out;
+    z-index: 1;
 }
 
 /* Botão de Envio */
@@ -158,7 +178,7 @@ body {
     background-color: #d11352;
 }
 
-/* Estilo para botão desabilitado (melhoria de UX) */
+/* Estilo para botão desabilitado */
 #send-button:disabled {
     opacity: 0.5;
     cursor: default;
@@ -174,28 +194,24 @@ body {
     color: #6c757d; 
     text-align: center;
     padding: 10px 0;
-    max-width: 800px; /* Limita a largura do disclaimer no desktop */
+    max-width: 800px; 
+    width: 100%; /* Garante que ele use a largura total */
 }
 
-/* --- Animação de Voz (Microfone Pulsando) --- */
-@keyframes pulse {
+/* --- Animações --- */
+@keyframes pulse-circle {
     0% {
-        transform: scale(1);
-        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0.2;
     }
     50% {
-        transform: scale(1.1);
-        opacity: 0.8;
+        transform: translate(-50%, -50%) scale(1.5);
+        opacity: 0.4;
     }
     100% {
-        transform: scale(1);
-        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0.2;
     }
-}
-
-/* Aplica o efeito quando a classe 'pulse' é adicionada pelo JS */
-#mic-icon.pulse {
-    animation: pulse 1s infinite;
 }
 
 /* --- Correção Responsiva (Mobile) --- */
@@ -203,35 +219,33 @@ body {
     body {
         padding: 0;
         margin: 0;
-        /* CORREÇÃO: Garante que o body ocupa 100% da largura */
-        width: 100%; 
-        overflow-x: hidden;
+        /* CRUCIAL: Fixa a altura da viewport e remove margem */
+        height: 100vh; 
+        overflow: hidden; /* Evita rolagem do body */
     }
 
     #chat-container {
-        /* Ocupa 100% da largura e o espaço restante na altura */
+        /* Ocupa todo o espaço restante do body */
         flex-grow: 1; 
         height: 100%;
         width: 100%;
         max-width: none;
         border-radius: 0;
         box-shadow: none;
-        margin-top: 0; /* Remove a margem superior no mobile */
+        margin-top: 0; 
     }
     
     #input-area {
-        /* Ajusta o padding para que o campo de input não fique colado nas bordas */
+        /* Garante que o input-area não tenha rolagem */
+        flex-shrink: 0; 
         padding: 10px 15px; 
     }
     
-    /* Garante que o disclaimer não cause rolagem horizontal */
+    /* CORREÇÃO: Força o disclaimer a ser visível no rodapé */
     #disclaimer-bottom {
+        flex-shrink: 0; /* Impede que ele seja encolhido */
         padding: 10px 15px; 
         box-sizing: border-box; 
-        width: 100%;
-        max-width: none; /* Remove a restrição de 800px */
-        text-align: center;
-        word-wrap: break-word; 
-        overflow-wrap: break-word;
+        max-width: none; 
     }
 }

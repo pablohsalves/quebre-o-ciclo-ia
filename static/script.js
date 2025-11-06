@@ -3,17 +3,17 @@ const messagesArea = document.getElementById('messages-area');
 const userInput = document.getElementById('user-input');
 const sendButton = document.getElementById('send-button');
 const resetButton = document.getElementById('reset-button');
+// NOVO: Referência ao wrapper do microfone
+const micWrapper = document.getElementById('mic-wrapper'); 
 const micIcon = document.getElementById('mic-icon'); 
 
 // --- Variável Global para o Histórico ---
 let chatHistory = []; 
 
-// ALTERAÇÃO AQUI: Nome da assistente alterado para Jady
 const initialMessage = "Olá! Eu sou a **Jady**, sua assistente de apoio do **Quebre o Ciclo**. Minha missão é te orientar sobre direitos, leis (como a Lei Maria da Penha) e locais de ajuda. Estou aqui para você. Como posso te ajudar hoje?";
 
-// Função para iniciar o chat com a mensagem da IA e preencher o histórico
+// Função para iniciar o chat
 function initializeChat() {
-    // 1. Garante que a mensagem inicial da IA está no chat (se ainda não estiver)
     if (messagesArea.children.length === 0 || !messagesArea.children[0].classList.contains('ia-message')) {
         messagesArea.innerHTML = `
             <div class="message ia-message">
@@ -22,25 +22,33 @@ function initializeChat() {
         `;
     }
     
-    // 2. Preenche o histórico com a mensagem inicial da IA (para que a IA se lembre de quem ela é)
     chatHistory = [
         { "role": "model", "parts": [{ "text": initialMessage }] }
     ];
     checkInput(); 
 }
 
-
-// Função para adicionar uma nova mensagem à área de chat
+// Função para adicionar uma nova mensagem
 function addMessage(text, sender) {
     const messageDiv = document.createElement('div');
     messageDiv.classList.add('message');
     messageDiv.classList.add(sender === 'user' ? 'user-message' : 'ia-message');
-    messageDiv.innerHTML = `<p>${text}</p>`;
     
+    // Adiciona o processamento do Markdown para mensagens da IA
+    if (sender === 'ia') {
+         // Simples substituição para markdown (ajuste conforme a necessidade do seu backend)
+        const formattedText = text
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/\n/g, '<br>');
+        messageDiv.innerHTML = `<p>${formattedText}</p>`;
+    } else {
+        messageDiv.innerHTML = `<p>${text}</p>`;
+    }
+
     messagesArea.appendChild(messageDiv);
     messagesArea.scrollTop = messagesArea.scrollHeight;
     
-    // Adiciona a mensagem ao histórico global (se não for a mensagem de processamento)
     if (!text.includes("... (A Força Feminina está a processar)")) {
         chatHistory.push({
             "role": sender === 'user' ? 'user' : 'model',
@@ -58,7 +66,7 @@ function resetChat() {
     alert("Chat reiniciado. Uma nova conversa foi iniciada.");
 }
 
-// Função de verificação para ativar/desativar o botão (Melhoria de UX)
+// Função de verificação para ativar/desativar o botão
 function checkInput() {
     sendButton.disabled = userInput.value.trim() === '';
     
@@ -82,22 +90,28 @@ function startVoiceRecognition() {
     recognition.continuous = false; 
     recognition.lang = 'pt-BR'; 
     
-    micIcon.style.color = '#ff0000'; 
-    micIcon.classList.add('pulse');
+    // NOVO: Adiciona a classe para animação do círculo
+    micWrapper.classList.add('recording');
+    micIcon.style.color = 'var(--mic-active-color)';
 
     recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
         userInput.value = transcript; 
         checkInput(); 
+        
+        // NOVO: ENVIA A MENSAGEM AUTOMATICAMENTE APÓS A TRANSCRIÇÃO
+        sendMessage(); 
     };
 
     recognition.onerror = (event) => {
         console.error("Erro no reconhecimento de voz:", event.error);
+        alert("Não foi possível capturar o áudio. Verifique as permissões do microfone.");
     };
     
     recognition.onend = () => {
+        // Remove a classe de animação e restaura a cor
+        micWrapper.classList.remove('recording');
         micIcon.style.color = 'var(--brand-color)';
-        micIcon.classList.remove('pulse');
     };
 
     recognition.start();
@@ -107,11 +121,12 @@ function startVoiceRecognition() {
 // Função que envia a mensagem para o backend Python (Flask)
 async function sendToBackend(userText) {
     // 1. Simula o processamento da IA
-    addMessage("... (A Força Feminina está a processar)", 'ia'); 
+    addMessage("... (A Jady está a processar)", 'ia'); 
     
     const processingMessage = messagesArea.lastChild; 
     
     try {
+        // ... (código fetch para o backend, permanece o mesmo) ...
         const response = await fetch('/chat', {
             method: 'POST',
             headers: {
@@ -150,6 +165,7 @@ function sendMessage() {
     addMessage(userText, 'user');
     sendToBackend(userText);
     
+    // NOVO: Limpa o campo de input *após* o envio (mesmo para voz)
     userInput.value = '';
     checkInput(); 
 }
@@ -158,7 +174,8 @@ function sendMessage() {
 // --- Event Listeners e Inicialização ---
 sendButton.addEventListener('click', sendMessage);
 resetButton.addEventListener('click', resetChat); 
-micIcon.addEventListener('click', startVoiceRecognition); 
+// O Listener agora está no wrapper (nova div)
+micWrapper.addEventListener('click', startVoiceRecognition); 
 
 userInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') { 
