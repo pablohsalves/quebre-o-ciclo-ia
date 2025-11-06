@@ -5,11 +5,11 @@ const sendButton = document.getElementById('send-button');
 const resetButton = document.getElementById('reset-button');
 const micIcon = document.getElementById('mic-icon'); 
 
-// --- NOVO: Variável Global para o Histórico ---
-// Este array armazenará o histórico no formato que a API Gemini espera
+// --- Variável Global para o Histórico ---
 let chatHistory = []; 
 
-const initialMessage = "Olá! Eu sou a **Força Feminina**, sua assistente de apoio do **Quebre o Ciclo**. Minha missão é te orientar sobre direitos, leis (como a Lei Maria da Penha) e locais de ajuda. Estou aqui para você. Como posso te ajudar hoje?";
+// ALTERAÇÃO AQUI: Nome da assistente alterado para Jady
+const initialMessage = "Olá! Eu sou a **Jady**, sua assistente de apoio do **Quebre o Ciclo**. Minha missão é te orientar sobre direitos, leis (como a Lei Maria da Penha) e locais de ajuda. Estou aqui para você. Como posso te ajudar hoje?";
 
 // Função para iniciar o chat com a mensagem da IA e preencher o histórico
 function initializeChat() {
@@ -40,7 +40,7 @@ function addMessage(text, sender) {
     messagesArea.appendChild(messageDiv);
     messagesArea.scrollTop = messagesArea.scrollHeight;
     
-    // NOVO: Adiciona a mensagem ao histórico global (se não for a mensagem de processamento)
+    // Adiciona a mensagem ao histórico global (se não for a mensagem de processamento)
     if (!text.includes("... (A Força Feminina está a processar)")) {
         chatHistory.push({
             "role": sender === 'user' ? 'user' : 'model',
@@ -51,8 +51,8 @@ function addMessage(text, sender) {
 
 // Função para limpar a conversa (Reset)
 function resetChat() {
-    messagesArea.innerHTML = ''; // Limpa tudo
-    initializeChat(); // Reinicia com a mensagem de boas-vindas e o histórico
+    messagesArea.innerHTML = ''; 
+    initializeChat(); 
     userInput.value = '';
     checkInput();
     alert("Chat reiniciado. Uma nova conversa foi iniciada.");
@@ -71,7 +71,7 @@ function checkInput() {
     }
 }
 
-// --- NOVO: Função para Reconhecimento de Voz (Speech-to-Text) ---
+// --- Função para Reconhecimento de Voz (Speech-to-Text) ---
 function startVoiceRecognition() {
     if (!('webkitSpeechRecognition' in window)) {
         alert("Desculpe, seu navegador não suporta o reconhecimento de voz. Por favor, use Chrome ou Edge.");
@@ -119,7 +119,7 @@ async function sendToBackend(userText) {
             },
             body: JSON.stringify({ 
                 message: userText,
-                history: chatHistory // NOVO: Envia o histórico completo!
+                history: chatHistory 
             })
         });
 
@@ -128,7 +128,7 @@ async function sendToBackend(userText) {
         // 2. Remove a mensagem de processamento
         messagesArea.removeChild(processingMessage);
 
-        // 3. Adiciona a resposta final do Gemini (A função addMessage cuidará de adicionar ao histórico)
+        // 3. Adiciona a resposta final do Gemini
         addMessage(data.response, 'ia');
         
     } catch (error) {

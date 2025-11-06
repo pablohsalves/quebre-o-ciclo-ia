@@ -23,7 +23,7 @@ app = Flask(__name__)
 
 # --- Configuração da Assistente (System Instruction) ---
 SYSTEM_INSTRUCTION = (
-    "Você é a Força Feminina, uma assistente de IA do projeto 'Quebre o Ciclo'. "
+    "Você é a Jady, uma assistente de IA do projeto 'Quebre o Ciclo'. "
     "Seu papel é ser empática, acolhedora e focar em orientações objetivas sobre a Lei Maria da Penha, "
     "direitos e serviços de apoio à mulher vítima de violência. Use tom suave, mas assertivo.\n\n"
     "DIRETRIZES ESSENCIAIS:\n"
@@ -56,11 +56,7 @@ def chat():
     try:
         client = genai.Client()
         
-        # 1. Monta a lista de conteúdos para a API Gemini
-        # A lista 'chat_history' já deve vir formatada pelo JS no padrão Gemini:
-        # [{"role": "user", "parts": [{"text": "..."}]}, {"role": "model", "parts": [{"text": "..."}]}]
-        
-        # 2. Adiciona a mensagem atual da usuária ao final da lista
+        # Monta a lista de conteúdos: Histórico + Mensagem Atual
         contents = chat_history + [
             {"role": "user", "parts": [{"text": user_message}]}
         ]
@@ -71,7 +67,7 @@ def chat():
         
         response = client.models.generate_content(
             model='gemini-2.5-flash',
-            contents=contents, # Envia o histórico + a mensagem atual
+            contents=contents, 
             config=config
         )
 
@@ -92,6 +88,14 @@ def chat():
     except Exception as e:
         print(f"🚨 Erro interno inesperado: {e}")
         return jsonify({"response": "Ocorreu um erro inesperado no servidor."}), 500
+
+@app.route("/admin-painel-jady") # Rota secreta de admin
+def admin_login():
+    """
+    Página de Login para a área administrativa.
+    """
+    return "<h1>Área Administrativa Jady</h1><p>Em desenvolvimento: Futuramente, aqui teremos login e ferramentas para editar o conhecimento da assistente.</p>"
+
 
 if __name__ == "__main__":
     print("Servidor Flask inicializado. Acesse: http://127.0.0.1:5000/")
