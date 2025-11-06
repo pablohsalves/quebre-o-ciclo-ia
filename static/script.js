@@ -5,6 +5,7 @@ let lastAiResponseText = "";
 let isDarkMode = localStorage.getItem('darkMode') === 'enabled'; 
 
 // --- Elementos DOM ---
+const chatContainer = document.getElementById('chat-container'); 
 const messagesArea = document.getElementById('messages-area');
 const userInput = document.getElementById('user-input');
 const sendButton = document.getElementById('send-button');
@@ -12,8 +13,9 @@ const resetButton = document.getElementById('reset-button');
 const panicButton = document.getElementById('panic-button');
 const darkModeToggle = document.getElementById('dark-mode-toggle');
 const micWrapper = document.getElementById('mic-wrapper'); 
+const hideHistoryToggle = document.getElementById('hide-history-toggle'); 
 
-// --- Configuração do Reconhecimento de Voz ---
+// --- Configuração do Reconhecimento de Voz (Microfone) ---
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null;
 let isListening = false;
@@ -25,7 +27,7 @@ if (SpeechRecognition) {
 
     recognition.onstart = function() {
         isListening = true;
-        micWrapper.classList.add('listening'); // ADICIONA A CLASSE PARA O EFEITO VISUAL
+        micWrapper.classList.add('listening'); 
         userInput.placeholder = 'Ouvindo... Clique para parar.'; 
     };
 
@@ -33,22 +35,18 @@ if (SpeechRecognition) {
         const transcript = event.results[0][0].transcript;
         userInput.value = transcript;
         sendMessage(); 
-        // O recognition.stop() é chamado implicitamente após o resultado.
-        // O onend será chamado em seguida para limpar os estados.
     };
 
     recognition.onerror = function(event) {
         console.error('Erro de reconhecimento de voz:', event.error);
-        // Garante que a gravação pare em caso de erro.
         if (isListening) {
              recognition.stop(); 
         }
     };
 
     recognition.onend = function() {
-        // ESSA FUNÇÃO É CRÍTICA E GARANTE A LIMPEZA VISUAL
         isListening = false;
-        micWrapper.classList.remove('listening'); // REMOVE A CLASSE DO EFEITO VISUAL
+        micWrapper.classList.remove('listening'); 
         userInput.placeholder = 'Fale com a Jady...';
     };
 } else {
@@ -58,16 +56,12 @@ if (SpeechRecognition) {
     }
 }
 
-// FUNÇÃO TOGGLE REFORÇADA: Controla o LIGA/DESLIGA e o clique para PARAR
 function toggleListening() {
     if (!recognition) return;
 
     if (isListening) {
-        // Se estiver ouvindo (circulo vermelho), um clique deve PARAR a gravação.
-        // O onend será chamado em seguida para limpar o estado.
         recognition.stop();
     } else {
-        // Se não estiver ouvindo, começa a gravação.
         try {
             recognition.start();
         } catch (e) {
@@ -76,7 +70,24 @@ function toggleListening() {
     }
 }
 
-// --- Funções de Renderização e Lógica do Chat (Mantido) ---
+// --- Funções de Renderização e Lógica do Chat ---
+
+/**
+ * Função para falar o texto (Text-to-Speech - TTS)
+ * @param {string} text O texto a ser lido em voz alta.
+ */
+function speakText(text) {
+    if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(text.replace(/\*\*/g, '')); 
+        utterance.lang = 'pt-BR'; 
+        window.speechSynthesis.cancel(); 
+        window.speechSynthesis.speak(utterance);
+    } else {
+        console.warn('Text-to-Speech não suportado neste navegador.');
+    }
+}
+
+
 function displayMessage(role, text) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${role}-message`;
@@ -90,30 +101,58 @@ function formatMarkdown(text) {
     text = text.replace(/\n/g, '<br>');
     return text;
 }
-function addAiFeedbackButtons(messageDiv) {
-    const feedbackDiv = document.createElement('div');
+
+/**
+ * Função que adiciona o botão TTS e os botões de Feedback
+ */
+function addAiTtsAndFeedback(messageDiv, aiResponseText) {
+    const actionDiv = document.createElement('div');
+    actionDiv.className = 'ai-actions';
+    
+    // 1. Botão TTS (Leitura em Voz Alta)
+    const ttsButton = document.createElement('i');
+    ttsButton.className = 'fas fa-volume-up tts-button';
+    ttsButton.title = 'Ouvir resposta';
+    ttsButton.onclick = () => speakText(aiResponseText);
+    actionDiv.appendChild(ttsButton);
+
+    // 2. Botões de Feedback 
+    const feedbackDiv = document.createElement('span'); 
     feedbackDiv.className = 'feedback-buttons';
     feedbackDiv.innerHTML = `<i class="fas fa-thumbs-up" data-feedback="positivo"></i><i class="fas fa-thumbs-down" data-feedback="negativo"></i>`;
-    messageDiv.appendChild(feedbackDiv);
+    actionDiv.appendChild(feedbackDiv);
+
+    messageDiv.appendChild(actionDiv);
 }
+
 function handleFeedbackClick(event) {
     const icon = event.target;
-    if (!icon.matches('.feedback-buttons i')) return;
+    if (!icon.matches('.ai-actions .feedback-buttons i')) return; 
+    
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel(); 
+    }
+
     const feedbackType = icon.dataset.feedback;
-    const feedbackButtons = icon.closest('.feedback-buttons');
+    const feedbackButtons = icon.closest('.feedback-buttons'); 
     if (feedbackButtons.classList.contains('disabled')) return;
+    
     feedbackButtons.classList.add('disabled');
     feedbackButtons.querySelectorAll('i').forEach(i => { i.style.color = '#ccc'; i.style.cursor = 'default'; i.style.pointerEvents = 'none'; });
     icon.style.color = feedbackType === 'positivo' ? '#28a745' : '#dc3545';
     icon.style.fontWeight = 'bold';
+    
     sendFeedback(feedbackType);
+    
     const thanksMessage = document.createElement('span');
     thanksMessage.textContent = ' Obrigado pelo feedback!';
     thanksMessage.style.marginLeft = '10px';
     thanksMessage.style.fontSize = '0.9em';
-    icon.parentNode.parentNode.appendChild(thanksMessage);
+    
+    icon.closest('.ai-actions').appendChild(thanksMessage); 
 }
 function sendFeedback(feedbackType) {
+    // A chamada ao servidor para registro de feedback
     fetch('/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -124,13 +163,17 @@ function sendFeedback(feedbackType) {
     .catch(error => console.error('Erro ao enviar feedback:', error));
 }
 async function sendMessage() {
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel(); 
+    }
+    
     const message = userInput.value.trim();
     if (!message) return;
     userInput.value = '';
     userInput.disabled = true;
     sendButton.style.opacity = '0.5';
     displayMessage('user', message);
-    lastUserPrompt = message;
+    lastUserPrompt = message; 
     const typingMessage = displayMessage('ai', '<i class="fas fa-ellipsis-h typing-indicator"></i>');
     chatHistory.push({ role: "user", parts: [{ text: message }] });
     try {
@@ -145,8 +188,11 @@ async function sendMessage() {
         messagesArea.removeChild(typingMessage);
         const aiMessageDiv = displayMessage('ai', aiResponse);
         chatHistory.push({ role: "model", parts: [{ text: aiResponse }] });
-        lastAiResponseText = aiResponse;
-        addAiFeedbackButtons(aiMessageDiv);
+        lastAiResponseText = aiResponse; 
+        
+        // CHAMA A FUNÇÃO QUE ADICIONA TTS + FEEDBACK
+        addAiTtsAndFeedback(aiMessageDiv, aiResponse);
+        
     } catch (error) {
         console.error('Erro ao comunicar com o servidor:', error);
         messagesArea.removeChild(typingMessage);
@@ -158,6 +204,10 @@ async function sendMessage() {
     }
 }
 function resetChat() {
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel(); 
+    }
+    
     if (confirm('Tem certeza que deseja começar uma nova conversa? O histórico será perdido.')) {
         chatHistory = [];
         messagesArea.innerHTML = '';
@@ -168,7 +218,41 @@ function resetChat() {
 }
 
 
-// --- Funções UX/Acessibilidade (Modo Escuro) ---
+// --- Funções UX/Acessibilidade ---
+
+// FUNÇÃO ATUALIZADA: Confirmação do Botão de Pânico
+function handlePanicClick() {
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel(); 
+    }
+    
+    if (confirm('ATENÇÃO: Você tem certeza que deseja sair imediatamente? O histórico será limpo e você será redirecionada para o Google.')) {
+        window.location.href = 'https://www.google.com'; 
+    }
+}
+
+// NOVO: Função para Ocultar/Exibir Histórico Rápido
+function toggleHistoryVisibility() {
+    chatContainer.classList.toggle('hidden-history');
+    const icon = hideHistoryToggle.querySelector('i');
+    
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel(); 
+    }
+    
+    if (chatContainer.classList.contains('hidden-history')) {
+        hideHistoryToggle.classList.add('active');
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+        hideHistoryToggle.title = 'Exibir Histórico';
+    } else {
+        hideHistoryToggle.classList.remove('active');
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+        hideHistoryToggle.title = 'Ocultar Histórico Rápido';
+    }
+}
+
 function applyDarkMode(enable) {
     if (!darkModeToggle) return; 
     
@@ -190,10 +274,6 @@ function toggleDarkMode() {
     localStorage.setItem('darkMode', isDarkMode ? 'enabled' : 'disabled');
 }
 
-function handlePanicClick() {
-    window.location.href = 'https://www.google.com'; 
-}
-
 function initializeApp() {
     applyDarkMode(isDarkMode);
     addInitialMessage();
@@ -213,18 +293,22 @@ document.addEventListener('DOMContentLoaded', () => {
     sendButton.addEventListener('click', sendMessage);
     resetButton.addEventListener('click', resetChat);
     panicButton.addEventListener('click', handlePanicClick);
+    // O listener de feedback deve ser no messagesArea para capturar cliques nos botões recém-criados
     messagesArea.addEventListener('click', handleFeedbackClick); 
 
     // Listener Crítico do Modo Escuro
     if (darkModeToggle) {
         darkModeToggle.addEventListener('click', toggleDarkMode);
-    } else {
-        console.error("Erro: O elemento darkModeToggle não foi encontrado no DOM.");
     }
     
-    // Listener ATUALIZADO para o microfone
+    // Listener Microfone
     if (micWrapper) {
         micWrapper.addEventListener('click', toggleListening);
+    }
+    
+    // NOVO Listener Ocultar Histórico
+    if (hideHistoryToggle) {
+        hideHistoryToggle.addEventListener('click', toggleHistoryVisibility);
     }
     
     // Listener do Enter

@@ -59,6 +59,8 @@ body {
     border-radius: 8px;
     max-width: 85%;
     line-height: 1.5;
+    /* Adiciona transição para o efeito de ocultar/exibir */
+    transition: opacity 0.3s, height 0.3s, padding 0.3s, margin 0.3s; 
 }
 .user-message {
     background-color: #ff69b4; 
@@ -85,7 +87,7 @@ body {
     50% { opacity: 0.2; }
 }
 
-/* Feedback Buttons */
+/* Feedback Buttons (Estilo Antigo) */
 .feedback-buttons {
     margin-top: 5px;
     font-size: 0.9em;
@@ -221,7 +223,7 @@ body {
 }
 
 /* ------------------------------------------- */
-/* --- NOVOS ESTILOS REFORÇADOS MICROFONE ATIVO --- */
+/* --- ESTILOS DO MICROFONE ATIVO (PULSANDO) --- */
 /* ------------------------------------------- */
 
 /* Define a animação de pulsação */
@@ -239,21 +241,17 @@ body {
 
 /* Estilo para o microfone quando está ATIVO (Ouvindo) */
 #mic-wrapper.listening {
-    color: white !important; /* FORÇA O ÍCONE A FICAR BRANCO */
-    background-color: #dc3545 !important; /* FORÇA O FUNDO VERMELHO */
+    color: white !important; 
+    background-color: #dc3545 !important; 
     border-radius: 50%;
     width: 35px; 
     height: 35px;
-    
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
     padding: 0;
-    
-    /* Aplica o efeito de pulsação */
     animation: pulse 1.5s infinite;
-    /* Ajuste de margem (se houver padding extra) */
     margin-right: 15px;
 }
 
@@ -261,11 +259,84 @@ body {
 #mic-wrapper.listening i {
     position: relative;
     z-index: 2;
-    color: white !important; /* REFORÇA A COR BRANCA DO ÍCONE */
+    color: white !important; 
 }
 
 
-/* --- Estilos do Modo Escuro (DARK MODE) --- */
+/* ------------------------------------------- */
+/* --- NOVOS ESTILOS PARA FASE 2 (TTS & Ocultar Histórico) --- */
+/* ------------------------------------------- */
+
+/* --- 1. Ocultar Histórico Rápido --- */
+
+#hide-history-toggle {
+    position: fixed;
+    top: 140px; 
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    background-color: #007bff; 
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    font-size: 1.5em;
+    z-index: 998;
+    transition: background-color 0.3s;
+}
+
+#hide-history-toggle.active {
+    background-color: #28a745; /* Fica verde quando o histórico está escondido */
+}
+
+/* Regra CRÍTICA para ocultar as mensagens */
+#chat-container.hidden-history #messages-area .message {
+    opacity: 0 !important;
+    height: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin: 0 !important;
+    overflow: hidden;
+    transition: opacity 0.3s, height 0.3s, padding 0.3s, margin 0.3s;
+}
+
+/* --- 2. Leitura em Voz Alta (TTS) e Feedback --- */
+
+/* Wrapper para o botão TTS e Feedback (garante alinhamento horizontal) */
+.ai-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    margin-top: 10px;
+    padding-top: 5px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1); /* Separador sutil */
+}
+
+/* Estilo para o Botão TTS */
+.tts-button {
+    cursor: pointer;
+    margin-right: 15px;
+    color: #007bff; /* Azul para se destacar */
+    font-size: 1em;
+    transition: color 0.1s;
+}
+.tts-button:hover {
+    color: #0056b3;
+}
+
+/* Ajuste do feedback para ficar alinhado */
+.ai-actions .feedback-buttons {
+    margin-top: 0;
+    padding-top: 0;
+}
+
+
+/* --- 3. Estilos do Modo Escuro (DARK MODE) e Responsividade --- */
+
+/* Estilos do Modo Escuro */
 body.dark-mode {
     background-color: #121212; 
     color: #f1f1f1; 
@@ -302,9 +373,14 @@ body.dark-mode #dark-mode-toggle {
     background-color: #f1f1f1;
     color: #1e1e1e;
 }
+body.dark-mode .ai-actions {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+body.dark-mode .tts-button {
+    color: #4da6ff;
+}
 
-
-/* --- Correção Responsiva (Mobile) --- */
+/* Correção Responsiva (Mobile) */
 @media (max-width: 850px) {
     #chat-container {
         margin: 0; 
@@ -317,12 +393,13 @@ body.dark-mode #dark-mode-toggle {
     #input-area {
         margin: 0 10px 5px 10px; 
     }
-    /* Ajuste fino dos botões flutuantes para mobile (mantido) */
+    /* Botões Flutuantes Mobile */
     #panic-button { top: 10px; right: 10px; width: 40px; height: 40px; font-size: 1.3em; }
     #dark-mode-toggle { top: 60px; right: 10px; width: 40px; height: 40px; font-size: 1.2em; }
+    #hide-history-toggle { top: 110px; right: 10px; width: 40px; height: 40px; font-size: 1.2em; } 
     #disclaimer-bottom { padding: 5px 10px 10px; }
     
-    /* Ajuste do microfone em modo listening no mobile, se necessário. */
+    /* Microfone Mobile */
     #mic-wrapper.listening {
         width: 30px; 
         height: 30px;
