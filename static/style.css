@@ -1,10 +1,11 @@
 /* --- Estilos Globais e do Chat --- */
 body {
     font-family: 'Arial', sans-serif;
-    background-color: #e9ecef; /* Cor de fundo padrão (claro) */
-    color: #343a40; /* Cor do texto padrão */
+    background-color: #e9ecef; 
+    color: #343a40; 
     transition: background-color 0.3s, color 0.3s;
-    padding-bottom: 120px; /* Espaço para a área de input fixa */
+    /* Reduzido para dar espaço à área fixa de input e disclaimer */
+    padding-bottom: 120px; 
 }
 
 #chat-container {
@@ -15,16 +16,17 @@ body {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 60px); /* 100% da altura da viewport menos margens */
+    /* Ajustado para ser flexível, mas limitado */
+    height: calc(100vh - 60px); 
     max-height: 900px;
-    overflow: hidden; /* Garante que o conteúdo não vaze */
+    overflow: hidden; 
 }
 
 /* --- Área de Mensagens --- */
 #messages-area {
     flex-grow: 1; /* Ocupa o espaço restante */
     padding: 15px 20px;
-    overflow-y: auto; /* Scroll para mensagens */
+    overflow-y: auto; 
     scroll-behavior: smooth;
     position: relative;
 }
@@ -55,7 +57,7 @@ body {
 
 /* Mensagens do Usuário */
 .user-message {
-    background-color: #ff69b4; /* Rosa */
+    background-color: #ff69b4; 
     color: white;
     margin-left: auto;
     text-align: right;
@@ -64,7 +66,7 @@ body {
 
 /* Mensagens da Jady */
 .ai-message {
-    background-color: #f1f3f5; /* Cinza claro */
+    background-color: #f1f3f5; 
     color: #343a40;
     margin-right: auto;
     text-align: left;
@@ -98,12 +100,13 @@ body {
     left: 50%;
     transform: translateX(-50%);
     width: 100%;
-    max-width: 800px; /* Largura do chat container */
+    max-width: 800px; 
     background: #ffffff;
     padding: 10px 0 0; 
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
+    /* Adicionado borda arredondada no topo da área fixa */
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
 }
 
 #input-area {
@@ -129,13 +132,19 @@ body {
     font-size: 1em;
     background-color: transparent;
 }
+/* Estilo para o placeholder, como na imagem e9d504.png */
+#user-input::placeholder {
+    color: #888;
+    font-style: italic;
+}
+
 
 #mic-wrapper {
     padding: 0 10px;
     display: flex;
     align-items: center;
     cursor: pointer;
-    color: #6c757d;
+    color: #ff69b4; /* Cor do ícone do microfone */
 }
 
 #send-button {
@@ -171,7 +180,7 @@ body {
     right: 20px;
     width: 50px;
     height: 50px;
-    background-color: #dc3545; /* Vermelho perigo */
+    background-color: #dc3545; 
     color: white;
     border-radius: 50%;
     display: flex;
@@ -191,7 +200,7 @@ body {
 /* Botão de Modo Escuro (Dark Mode Toggle) */
 #dark-mode-toggle {
     position: fixed;
-    top: 80px; /* 20px (top) + 50px (panic height) + 10px (spacing) */
+    top: 80px; 
     right: 20px;
     width: 50px;
     height: 50px;
@@ -215,12 +224,12 @@ body {
 
 /* --- Estilos do Modo Escuro (DARK MODE) --- */
 body.dark-mode {
-    background-color: #121212; /* Fundo mais escuro */
-    color: #f1f1f1; /* Texto claro */
+    background-color: #121212; 
+    color: #f1f1f1; 
 }
 
 body.dark-mode #chat-container {
-    background: #1e1e1e; /* Container do chat escuro */
+    background: #1e1e1e; 
     box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
 }
 
@@ -243,13 +252,17 @@ body.dark-mode #user-input {
     color: #f1f1f1;
 }
 
+body.dark-mode #user-input::placeholder {
+    color: #aaa;
+}
+
 body.dark-mode #mic-wrapper {
-    color: #aaaaaa;
+    color: #ff69b4;
 }
 
 /* Mensagens da Jady no Dark Mode */
 body.dark-mode .ai-message {
-    background-color: #333333; /* Cinza escuro */
+    background-color: #333333; 
     color: #f1f1f1;
 }
 
@@ -279,13 +292,17 @@ body.dark-mode #disclaimer-bottom {
         border-radius: 0;
         box-shadow: none;
         margin-top: 0; 
-        height: 100%; 
+        /* Ocupa toda a tela menos o footer fixo */
+        height: calc(100% - 110px); 
     }
 
     #footer-fixed-container {
         max-width: 100%; 
         width: 100%;
         left: 0; 
+        /* Sem bordas arredondadas no mobile para cobrir toda a largura */
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
     }
     
     #input-area {
@@ -293,7 +310,7 @@ body.dark-mode #disclaimer-bottom {
     }
     
     #disclaimer-bottom {
-        padding: 0 15px 5px; 
+        padding: 0 15px 10px; 
         box-sizing: border-box; 
     }
 
@@ -306,9 +323,9 @@ body.dark-mode #disclaimer-bottom {
         font-size: 1.3em;
     }
     
-    /* NOVO POSICIONAMENTO: Abaixo do botão de pânico no mobile */
+    /* Posição do Dark Mode no Mobile */
     #dark-mode-toggle {
-        top: 60px; /* 10px (top) + 40px (panic height) + 10px (spacing) */
+        top: 60px; 
         right: 10px;
         width: 40px;
         height: 40px;
