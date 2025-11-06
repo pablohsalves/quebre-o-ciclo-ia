@@ -78,7 +78,7 @@
         .logout-link:hover {
             color: #a71d2a;
         }
-        /* Estilo para a área de Logs */
+        /* Estilo para a área de Logs/JSON */
         .logs-area {
             background-color: #333;
             color: #e0e0e0;
@@ -100,6 +100,11 @@
         .reset-button:hover {
              background-color: #c82333;
         }
+        .json-note {
+            font-size: 0.8em;
+            color: #dc3545;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
@@ -112,13 +117,22 @@
             <div class="alert alert-success">{{ message }}</div>
         {% endif %}
 
-        <h2>1. Edição da Instrução do Sistema (Conhecimento da Jady)</h2>
+        <h2>1. Edição da Instrução do Sistema (knowledge.txt)</h2>
         <form method="POST">
             <textarea name="knowledge">{{ system_instruction }}</textarea>
             <button type="submit">Atualizar Instrução da Jady</button>
         </form>
 
-        <h2>2. Logs de Conversa (logs.txt)</h2>
+        <h2>2. Edição de Fontes de Apoio (resources.json)</h2>
+        <div class="json-note">
+            ⚠️ **ATENÇÃO:** Mantenha o formato JSON (chaves/valores, vírgulas, colchetes). A Jady terá acesso a este texto na sua instrução do sistema.
+        </div>
+        <form method="POST">
+            <textarea name="resources" class="logs-area" style="min-height: 300px;">{{ resources_content }}</textarea>
+            <button type="submit">Atualizar Fontes de Apoio (JSON)</button>
+        </form>
+
+        <h2>3. Logs de Conversa (logs.txt)</h2>
         
         <div class="logs-actions">
             <form method="POST" onsubmit="return confirm('Tem certeza que deseja RESETAR os logs? Esta ação é irreversível.')">
@@ -129,7 +143,7 @@
         
         <textarea name="logs_content" class="logs-area" readonly>{{ logs_content }}</textarea>
 
-        <h2>3. Feedback de Respostas (feedback.txt)</h2>
+        <h2>4. Feedback de Respostas (feedback.txt)</h2>
         
         <div class="logs-actions">
             <form method="POST" onsubmit="return confirm('Tem certeza que deseja RESETAR o feedback? Esta ação é irreversível.')">

@@ -9,6 +9,63 @@
     --border-color: #e0e0e0;
     --mic-active-color: #ff0000; 
     --footer-height: 100px; 
+    
+    /* Variáveis do Dark Mode */
+    --dark-bg: #1c1c1c;
+    --dark-text-light: #e0e0e0;
+    --dark-ia-bubble: #343a40;
+    --dark-user-bubble: #6b2d4b;
+    --dark-input-bg: #2a2a2a;
+    --dark-border-color: #444;
+}
+
+/* --- Dark Mode Styles --- */
+body.dark-mode {
+    background-color: var(--dark-bg); 
+    color: var(--dark-text-light);
+}
+
+body.dark-mode #chat-container {
+    background-color: #242424;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5); 
+}
+
+body.dark-mode .ia-message {
+    background-color: var(--dark-ia-bubble); 
+    color: var(--dark-text-light);
+}
+
+body.dark-mode .user-message {
+    background-color: var(--dark-user-bubble); 
+    color: var(--dark-text-light); 
+}
+
+body.dark-mode #footer-fixed-container {
+    background-color: var(--dark-bg);
+}
+
+body.dark-mode #input-box-wrapper {
+    background-color: var(--dark-input-bg);
+    border-color: var(--dark-border-color);
+}
+
+body.dark-mode #user-input {
+    color: var(--dark-text-light);
+}
+
+body.dark-mode #user-input::placeholder {
+    color: #888;
+}
+
+body.dark-mode #disclaimer-bottom {
+    color: #999; 
+}
+
+body.dark-mode #reset-button {
+    color: #888;
+}
+body.dark-mode #reset-button:hover {
+    color: var(--brand-color);
 }
 
 body {
@@ -18,7 +75,6 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    /* Padding para compensar o rodapé fixo */
     padding-bottom: var(--footer-height); 
     min-height: 100vh;
     margin: 0;
@@ -27,7 +83,6 @@ body {
 #chat-container {
     width: 100%;
     max-width: 800px; 
-    /* Altura definida pelo viewport menos o rodapé e margem superior */
     height: calc(100vh - var(--footer-height) - 40px); 
     flex-grow: 0; 
     
@@ -229,6 +284,35 @@ body {
     background-color: #c82333;
 }
 
+/* --- NOVO: Botão de Toggle do Modo Escuro --- */
+#dark-mode-toggle {
+    position: fixed;
+    top: 20px; 
+    right: 65px; /* Posição à esquerda do botão de pânico */
+    background-color: #343a40; 
+    color: white;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1em;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    z-index: 1000; 
+    transition: background-color 0.2s;
+}
+#dark-mode-toggle:hover {
+    background-color: #23272b;
+}
+
+/* Icone de sol no dark mode */
+body.dark-mode #dark-mode-toggle {
+    background-color: #f1f1f1;
+    color: #343a40;
+}
+
 
 /* --- Estilização do Indicador de Digitação (Typing Indicator) --- */
 .typing-indicator {
@@ -240,6 +324,9 @@ body {
     margin-right: auto;
     margin-bottom: 15px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+body.dark-mode .typing-indicator {
+    background-color: var(--dark-ia-bubble);
 }
 
 .typing-indicator span {
@@ -267,15 +354,9 @@ body {
     margin-top: 5px;
     display: flex;
     gap: 10px;
-    /* Alinha o feedback à direita do balão de IA */
-    margin-left: auto; 
+    margin-left: 0; 
     padding-top: 5px;
 }
-
-.ia-message .feedback-container {
-    margin-left: 0; /* Alinha o feedback à esquerda, dentro do balão de IA */
-}
-
 
 .feedback-icon {
     font-size: 1.1em;
@@ -285,11 +366,11 @@ body {
 }
 
 .feedback-icon.like:hover {
-    color: #28a745; /* Verde */
+    color: #28a745; 
 }
 
 .feedback-icon.dislike:hover {
-    color: #dc3545; /* Vermelho */
+    color: #dc3545; 
 }
 
 /* Estado de ícone selecionado */
@@ -310,7 +391,7 @@ body {
     font-size: 0.8em;
     color: #6c757d;
     margin-left: 10px;
-    display: none; /* Escondido por padrão */
+    display: none; 
     align-self: center;
 }
 
@@ -382,5 +463,13 @@ body {
         width: 40px;
         height: 40px;
         font-size: 1.3em;
+    }
+    
+    #dark-mode-toggle {
+        top: 10px; 
+        right: 60px;
+        width: 40px;
+        height: 40px;
+        font-size: 1.2em;
     }
 }

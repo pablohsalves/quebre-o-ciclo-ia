@@ -1,5 +1,6 @@
 import os
 import datetime
+import json # NOVO: Necessário para trabalhar com JSON
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from google import genai
 from google.genai import types
@@ -24,22 +25,43 @@ client = genai.Client(api_key=GEMINI_API_KEY)
 # --- Caminhos de Arquivo ---
 KNOWLEDGE_FILE = 'knowledge.txt'
 LOGS_FILE = 'logs.txt'
-FEEDBACK_FILE = 'feedback.txt' # NOVO ARQUIVO DE FEEDBACK
+FEEDBACK_FILE = 'feedback.txt'
+RESOURCES_FILE = 'resources.json' # NOVO ARQUIVO DE RECURSOS
 
-# Garante que os arquivos existam
-for filename in [KNOWLEDGE_FILE, LOGS_FILE, FEEDBACK_FILE]:
-    if not os.path.exists(filename):
-        with open(filename, 'w', encoding='utf-8') as f:
-            if filename == KNOWLEDGE_FILE:
-                f.write("Você é a Jady, assistente de apoio do Quebre o Ciclo. Sempre responda em português. Seu objetivo é fornecer informações sobre direitos, leis (como Lei Maria da Penha) e locais de ajuda. Mantenha o tom de voz acolhedor, empático e informativo. Sempre reforce para a usuária buscar ajuda profissional ou ligar 190 em caso de emergência. Nunca se apresente como terapeuta ou substituta de apoio legal/policial.")
-            elif filename == LOGS_FILE:
-                f.write(f"--- Logs Iniciados em {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ---\n")
-            # Inicializa o arquivo de feedback
-            elif filename == FEEDBACK_FILE:
-                f.write(f"--- Feedback Iniciado em {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ---\n")
+# Garante que os arquivos existam e inicializa RESOURCES_FILE
+def initialize_files():
+    """Garante que os arquivos necessários existam e os inicializa se for a primeira vez."""
+    for filename in [KNOWLEDGE_FILE, LOGS_FILE, FEEDBACK_FILE]:
+        if not os.path.exists(filename):
+            with open(filename, 'w', encoding='utf-8') as f:
+                if filename == KNOWLEDGE_FILE:
+                    f.write("Você é a Jady, assistente de apoio do Quebre o Ciclo. Sempre responda em português. Seu objetivo é fornecer informações sobre direitos, leis (como Lei Maria da Penha) e locais de ajuda. Mantenha o tom de voz acolhedor, empático e informativo. Sempre reforce para a usuária buscar ajuda profissional ou ligar 190 em caso de emergência. Nunca se apresente como terapeuta ou substituta de apoio legal/policial.")
+                elif filename == LOGS_FILE:
+                    f.write(f"--- Logs Iniciados em {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ---\n")
+                elif filename == FEEDBACK_FILE:
+                    f.write(f"--- Feedback Iniciado em {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ---\n")
+    
+    # Inicializa o arquivo JSON de Recursos
+    if not os.path.exists(RESOURCES_FILE):
+        default_resources = {
+            "title": "Contatos e Fontes de Apoio (Editável no Admin)",
+            "description": "Estes são contatos importantes que você pode usar para apoio imediato.",
+            "contacts": [
+                {"name": "Emergência (Polícia)", "value": "190"},
+                {"name": "Central de Atendimento à Mulher", "value": "180"},
+                {"name": "Conselho Tutelar", "value": "Disque 100"},
+                {"name": "Centro de Referência de Assistência Social (CRAS)", "value": "Busque o endereço mais próximo no Google"}
+            ]
+        }
+        try:
+            with open(RESOURCES_FILE, 'w', encoding='utf-8') as f:
+                json.dump(default_resources, f, ensure_ascii=False, indent=4)
+        except IOError as e:
+            print(f"Erro ao inicializar o arquivo de recursos: {e}")
 
+initialize_files() # Chama a função de inicialização na startup
 
-# --- Funções Auxiliares ---
+# --- Funções Auxiliares de Arquivo ---
 def get_system_instruction():
     """Lê e retorna a instrução do sistema do arquivo."""
     try:
@@ -48,14 +70,14 @@ def get_system_instruction():
     except FileNotFoundError:
         return "Você é a Jady, assistente de apoio do Quebre o Ciclo."
 
-def start_chat():
-    """Inicializa um novo chat com a instrução do sistema."""
-    return client.chats.create(
-        model='gemini-2.5-flash',
-        config=types.GenerateContentConfig(
-            system_instruction=get_system_instruction()
-        )
-    )
+def get_resources():
+    """Lê e retorna o conteúdo do resources.json."""
+    try:
+        with open(RESOURCES_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        # Retorna estrutura vazia em caso de erro de leitura
+        return {"title": "Recursos Indisponíveis", "description": "Erro ao carregar recursos.", "contacts": []}
 
 def log_conversation(user_message, ai_response):
     """Registra a conversa (usuário e IA) no arquivo de logs."""
@@ -72,7 +94,6 @@ def log_conversation(user_message, ai_response):
     except IOError as e:
         print(f"Erro ao escrever no arquivo de logs: {e}")
 
-# --- NOVO: Função de Log de Feedback ---
 def log_feedback(feedback_type, user_prompt, ai_response):
     """Registra o feedback do usuário no arquivo."""
     timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -88,8 +109,25 @@ def log_feedback(feedback_type, user_prompt, ai_response):
     except IOError as e:
         print(f"Erro ao escrever no arquivo de feedback: {e}")
 
+# --- Funções do Gemini ---
+def start_chat():
+    """Inicializa um novo chat com a instrução do sistema."""
+    # NOVO: Inclui os recursos no system_instruction para que a Jady possa usá-los
+    resources = get_resources()
+    resources_text = "\n\n--- RECURSOS DE APOIO ---\n"
+    for contact in resources.get('contacts', []):
+        resources_text += f"- {contact['name']}: {contact['value']}\n"
+        
+    system_instruction = get_system_instruction() + resources_text
+    
+    return client.chats.create(
+        model='gemini-2.5-flash',
+        config=types.GenerateContentConfig(
+            system_instruction=system_instruction
+        )
+    )
 
-# --- Rotas do Chat ---
+# --- Rotas do Chat e Feedback (Mantidas) ---
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -115,12 +153,10 @@ def chat_endpoint():
         # 3. LOGA A CONVERSA
         log_conversation(user_message, ai_response)
         
-        # O último prompt do usuário é a última mensagem do histórico
         last_user_prompt = user_message 
         
         return jsonify({
             'response': ai_response,
-            # Retorna o último prompt e a resposta para serem usados no JS para o feedback
             'user_prompt': last_user_prompt,
             'ai_response_text': ai_response 
         })
@@ -129,11 +165,10 @@ def chat_endpoint():
         print(f"Erro ao comunicar com o Gemini: {e}")
         return jsonify({'response': "Desculpe, houve um erro técnico ao comunicar com a assistente. Por favor, tente novamente ou ligue 190."}), 500
 
-# --- NOVO: Rota para receber Feedback ---
 @app.route('/feedback', methods=['POST'])
 def receive_feedback():
     data = request.json
-    feedback_type = data.get('type') # 'like' ou 'dislike'
+    feedback_type = data.get('type') 
     user_prompt = data.get('user_prompt')
     ai_response_text = data.get('ai_response_text')
     
@@ -144,7 +179,7 @@ def receive_feedback():
     return jsonify({'status': 'error', 'message': 'Dados de feedback inválidos.'}), 400
 
 
-# --- Rotas Admin ---
+# --- Rotas Admin (Atualizadas para Recursos) ---
 @app.route('/admin', methods=['GET', 'POST'])
 def admin_login():
     if 'logged_in' in session:
@@ -168,6 +203,7 @@ def admin_painel():
         return redirect(url_for('admin_login'))
 
     system_instruction = get_system_instruction()
+    resources_content = json.dumps(get_resources(), ensure_ascii=False, indent=4) # Carrega recursos como string JSON
     message = None
     
     if request.method == 'POST':
@@ -182,8 +218,24 @@ def admin_painel():
             except IOError:
                 message = "Erro ao salvar o arquivo knowledge.txt."
         
+        if 'resources' in request.form:
+            # NOVO: 2. Processa Edição de Recursos JSON
+            new_resources_content = request.form['resources']
+            try:
+                # Tenta carregar para validar se é um JSON válido
+                json.loads(new_resources_content) 
+                with open(RESOURCES_FILE, 'w', encoding='utf-8') as f:
+                    f.write(new_resources_content)
+                resources_content = new_resources_content # Atualiza a variável para o template
+                message = "Fontes de Apoio (resources.json) atualizadas com sucesso!"
+            except json.JSONDecodeError:
+                message = "ERRO: O conteúdo enviado para Fontes de Apoio não é um JSON válido. Por favor, verifique a sintaxe."
+            except IOError:
+                message = "Erro ao salvar o arquivo resources.json."
+        
+        # Lógica de reset (logs e feedback)
         if 'reset_logs' in request.form:
-            # 2. Processa Reset de Logs
+            # 3. Processa Reset de Logs
             try:
                 with open(LOGS_FILE, 'w', encoding='utf-8') as f:
                     f.write(f"--- Logs Resetados em {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ---\n")
@@ -191,7 +243,8 @@ def admin_painel():
             except IOError:
                 message = "Erro ao resetar o arquivo de logs."
         
-        if 'reset_feedback' in request.form: # NOVO: Processa Reset de Feedback
+        if 'reset_feedback' in request.form: 
+            # 4. Processa Reset de Feedback
             try:
                 with open(FEEDBACK_FILE, 'w', encoding='utf-8') as f:
                     f.write(f"--- Feedback Resetado em {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ---\n")
@@ -199,14 +252,13 @@ def admin_painel():
             except IOError:
                 message = "Erro ao resetar o arquivo de feedback."
                 
-    # Lê os logs para exibição
+    # Lê os logs e feedback para exibição
     try:
         with open(LOGS_FILE, 'r', encoding='utf-8') as f:
             logs_content = f.read()
     except FileNotFoundError:
         logs_content = "Arquivo de logs não encontrado."
 
-    # Lê o feedback para exibição
     try:
         with open(FEEDBACK_FILE, 'r', encoding='utf-8') as f:
             feedback_content = f.read()
@@ -216,8 +268,9 @@ def admin_painel():
     return render_template(
         'admin_painel.html', 
         system_instruction=system_instruction, 
+        resources_content=resources_content, # Passa o JSON dos recursos
         logs_content=logs_content, 
-        feedback_content=feedback_content, # Passa o conteúdo do feedback
+        feedback_content=feedback_content,
         message=message
     )
 
