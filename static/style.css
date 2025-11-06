@@ -81,33 +81,33 @@ body {
     width: 100%;
     max-width: 800px; 
     background: #ffffff;
-    padding: 10px 20px 0; /* Padding superior, lateral corrigido */
+    padding: 10px 20px 0; /* Padding superior, lateral corrigido no desktop */
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
     border-top-left-radius: 12px;
     border-top-right-radius: 12px;
 }
 
-/* O #input-area AGORA é o wrapper principal arredondado */
+/* O #input-area é o wrapper principal arredondado, sem padding extra */
 #input-area {
     display: flex; 
     align-items: center;
-    padding: 5px; /* Padding interno para a caixa */
-    background-color: #f8f9fa; /* Fundo da caixa */
+    padding: 5px; /* Padding interno para o conteúdo (input, mic, send) */
+    background-color: #f8f9fa; 
     border: 1px solid #ced4da;
-    border-radius: 25px; /* Cantos arredondados */
-    margin-bottom: 5px; /* Espaço para o disclaimer */
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); /* Sombra suave */
-    height: 45px; /* Altura fixa para alinhamento */
+    border-radius: 25px; 
+    margin-bottom: 5px; 
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); 
+    height: 45px; 
 }
 
 #user-input {
     flex-grow: 1;
-    padding: 0 10px; /* Padding ajustado dentro do wrapper */
+    padding: 0 10px; 
     border: none;
     outline: none;
     font-size: 1em;
     background-color: transparent;
-    height: 100%; /* Ocupa a altura total do wrapper */
+    height: 100%; 
 }
 
 #user-input::placeholder {
@@ -121,7 +121,7 @@ body {
     display: flex;
     align-items: center;
     cursor: pointer;
-    color: #ff69b4; /* Cor do ícone */
+    color: #ff69b4; 
     font-size: 1.1em;
     flex-shrink: 0;
 }
@@ -130,8 +130,8 @@ body {
 #send-button {
     background-color: #ff69b4;
     color: white;
-    width: 35px; /* Menor para caber no wrapper */
-    height: 35px; /* Menor para caber no wrapper */
+    width: 35px; 
+    height: 35px; 
     border-radius: 50%; 
     display: flex;
     align-items: center;
@@ -140,7 +140,7 @@ body {
     font-size: 0.9em;
     flex-shrink: 0;
     transition: background-color 0.3s, transform 0.1s;
-    margin-right: 5px; /* Espaço após o botão */
+    margin-right: 5px; /* Espaço após o botão, dentro do padding de 5px */
 }
 
 #send-button:active {
@@ -155,7 +155,7 @@ body {
     padding: 5px 0 10px; 
 }
 
-/* --- Botões Flutuantes (Pânico e Dark Mode) - Mantido --- */
+/* --- Botões Flutuantes (Pânico e Dark Mode) (Mantido) --- */
 #panic-button {
     position: fixed;
     top: 20px;
@@ -218,7 +218,7 @@ body.dark-mode #disclaimer-bottom {
 }
 
 
-/* --- Correção Responsiva (Mobile) - Ajustes Finais --- */
+/* --- Correção Responsiva (Mobile) - CORREÇÃO DA LARGURA E CORTE --- */
 @media (max-width: 850px) {
     body {
         padding: 0;
@@ -247,12 +247,13 @@ body.dark-mode #disclaimer-bottom {
         left: 0; 
         transform: translateX(0);
         border-radius: 0; 
-        padding: 10px 10px 0; /* Padding lateral corrigido para mobile */
+        /* REMOÇÃO CRÍTICA: Remove padding lateral no footer para que o #input-area use a largura total */
+        padding: 10px 0 0; 
     }
     
     #input-area {
-        /* Garante que o input-area (o wrapper) use toda a largura disponível */
-        margin-bottom: 5px; 
+        /* Adiciona a margem lateral AQUI para o input-area, garantindo que não seja cortado nas bordas da tela */
+        margin: 0 10px 5px 10px; 
     }
 
     /* Ajuste fino dos botões flutuantes para mobile */
@@ -270,5 +271,9 @@ body.dark-mode #disclaimer-bottom {
         width: 40px;
         height: 40px;
         font-size: 1.2em;
+    }
+    
+    #disclaimer-bottom {
+        padding: 5px 10px 10px; /* Ajusta o padding do disclaimer para não encostar na borda */
     }
 }
