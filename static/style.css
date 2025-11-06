@@ -13,24 +13,30 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: var(--bg-light); 
     color: var(--text-dark);
+    /* CORREÇÃO CHAVE: Usar Flexbox para empilhar e centralizar */
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
+    align-items: center; 
     min-height: 100vh;
     margin: 0;
+    padding-bottom: 20px; /* Espaçamento abaixo do disclaimer no desktop */
 }
 
 #chat-container {
     width: 100%;
     max-width: 800px; 
-    height: 85vh; 
+    
+    /* CORREÇÃO CHAVE: Permite que o Flexbox controle a altura */
+    height: 100%; 
+    flex-grow: 1; 
+    
     background-color: #ffffff;
     border-radius: 12px;
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08); 
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    margin-top: 20px; /* Pequena margem superior no desktop */
 }
 
 /* Área de Mensagens (com botão de reset flutuante) */
@@ -94,7 +100,7 @@ body {
 #input-area {
     padding: 15px 20px;
     background-color: var(--input-bg);
-    /* CORREÇÃO 1: REMOÇÃO DA BORDA SUPERIOR */
+    /* CORREÇÃO: Remove a borda superior (a "linha") */
     border-top: none; 
 }
 
@@ -168,6 +174,7 @@ body {
     color: #6c757d; 
     text-align: center;
     padding: 10px 0;
+    max-width: 800px; /* Limita a largura do disclaimer no desktop */
 }
 
 /* --- Animação de Voz (Microfone Pulsando) --- */
@@ -196,26 +203,33 @@ body {
     body {
         padding: 0;
         margin: 0;
+        /* CORREÇÃO: Garante que o body ocupa 100% da largura */
+        width: 100%; 
+        overflow-x: hidden;
     }
 
     #chat-container {
-        height: 100vh;
+        /* Ocupa 100% da largura e o espaço restante na altura */
+        flex-grow: 1; 
+        height: 100%;
         width: 100%;
         max-width: none;
         border-radius: 0;
         box-shadow: none;
+        margin-top: 0; /* Remove a margem superior no mobile */
     }
     
-    /* CORREÇÃO 2: Ajuste o padding da input area no mobile */
     #input-area {
-        padding: 10px; /* Reduz o padding para maximizar a área de input */
+        /* Ajusta o padding para que o campo de input não fique colado nas bordas */
+        padding: 10px 15px; 
     }
     
-    /* CORREÇÃO 3: Garante que o disclaimer não cause rolagem */
+    /* Garante que o disclaimer não cause rolagem horizontal */
     #disclaimer-bottom {
         padding: 10px 15px; 
         box-sizing: border-box; 
         width: 100%;
+        max-width: none; /* Remove a restrição de 800px */
         text-align: center;
         word-wrap: break-word; 
         overflow-wrap: break-word;
