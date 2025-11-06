@@ -17,10 +17,9 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    /* Usa min-height para permitir que o conteúdo se expanda */
     min-height: 100vh;
     margin: 0;
-    padding-bottom: 20px; /* Espaço para o rodapé no desktop */
+    padding-bottom: 20px; 
 }
 
 #chat-container {
@@ -97,6 +96,8 @@ body {
     background-color: var(--input-bg);
     border-top: none; 
     flex-shrink: 0; 
+    /* AJUSTE DESKTOP: Adiciona uma margem inferior para separar do disclaimer */
+    margin-bottom: 5px; 
 }
 
 #input-box-wrapper {
@@ -195,7 +196,8 @@ body {
     font-size: 0.85em;
     color: #6c757d; 
     text-align: center;
-    padding: 10px 0;
+    /* AJUSTE DESKTOP: Aumenta o padding superior para separação */
+    padding: 15px 0; 
     max-width: 800px; 
     width: 100%; 
     flex-shrink: 0;
@@ -223,24 +225,23 @@ body {
     body {
         padding: 0;
         margin: 0;
-        /* CRUCIAL: Força 100% da altura da viewport no mobile */
         height: 100vh; 
-        overflow: hidden; /* Evita rolagem do body */
+        overflow: hidden; 
     }
 
     #chat-container {
-        /* Ocupa o espaço restante da altura */
         height: 100%;
         width: 100%;
         max-width: none;
         border-radius: 0;
         box-shadow: none;
         margin-top: 0; 
-        flex-grow: 1; /* Permite crescer */
+        flex-grow: 1; 
     }
     
     #input-area {
         padding: 10px 15px; 
+        margin-bottom: 0; /* Remove margem inferior no mobile */
     }
     
     #disclaimer-bottom {

@@ -9,7 +9,7 @@ const micIcon = document.getElementById('mic-icon');
 // --- Variável Global para o Histórico ---
 let chatHistory = []; 
 
-// NOME CORRIGIDO AQUI
+// MENSAGEM INICIAL PADRONIZADA (Jady e Quebre o Ciclo)
 const initialMessage = "Olá! Eu sou a **Jady**, sua assistente de apoio do **Quebre o Ciclo**. Minha missão é te orientar sobre direitos, leis (como a Lei Maria da Penha) e locais de ajuda. Estou aqui para você. Como posso te ajudar hoje?";
 
 // Função para iniciar o chat
@@ -48,7 +48,7 @@ function addMessage(text, sender) {
     messagesArea.appendChild(messageDiv);
     messagesArea.scrollTop = messagesArea.scrollHeight;
     
-    // Adiciona ao histórico, exceto mensagens de processamento
+    // NOME CORRIGIDO AQUI
     if (!text.includes("... (A Jady está a processar)")) {
         chatHistory.push({
             "role": sender === 'user' ? 'user' : 'model',
