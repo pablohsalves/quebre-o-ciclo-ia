@@ -14,22 +14,20 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: var(--bg-light); 
     color: var(--text-dark);
-    /* REVERSÃO PARA FLEXBOX DE ESTRUTURA: Stack vertical centralizado */
     display: flex;
     flex-direction: column;
     align-items: center;
     /* Usa min-height para permitir que o conteúdo se expanda */
     min-height: 100vh;
     margin: 0;
-    padding-bottom: 20px; 
+    padding-bottom: 20px; /* Espaço para o rodapé no desktop */
 }
 
 #chat-container {
     width: 100%;
     max-width: 800px; 
-    /* REVERSÃO: Define uma altura padrão para Desktop */
     height: 85vh; /* Altura padrão para desktop */
-    flex-grow: 0; /* Não cresce infinitamente no desktop */
+    flex-grow: 0; 
     
     background-color: #ffffff;
     border-radius: 12px;
@@ -40,7 +38,7 @@ body {
     margin-top: 20px; 
 }
 
-/* Área de Mensagens (com botão de reset flutuante) */
+/* Área de Mensagens */
 #messages-area {
     flex-grow: 1;
     padding: 20px;
@@ -98,7 +96,7 @@ body {
     padding: 15px 20px;
     background-color: var(--input-bg);
     border-top: none; 
-    flex-shrink: 0; /* Garante que não encolhe */
+    flex-shrink: 0; 
 }
 
 #input-box-wrapper {
@@ -125,7 +123,7 @@ body {
     color: #a0a0a0;
 }
 
-/* Wrapper para o Microfone para aplicar o círculo pulsante */
+/* Wrapper para o Microfone */
 #mic-wrapper {
     position: relative;
     display: flex;
@@ -145,7 +143,7 @@ body {
     transition: color 0.2s;
 }
 
-/* Elemento do Círculo Pulsante (visível apenas durante a gravação) */
+/* Elemento do Círculo Pulsante */
 #mic-wrapper.recording::before {
     content: '';
     position: absolute;
@@ -200,6 +198,7 @@ body {
     padding: 10px 0;
     max-width: 800px; 
     width: 100%; 
+    flex-shrink: 0;
 }
 
 /* --- Animações --- */
@@ -224,31 +223,27 @@ body {
     body {
         padding: 0;
         margin: 0;
-        /* CRUCIAL: Força 100% da altura no mobile e remove rolagem do body */
+        /* CRUCIAL: Força 100% da altura da viewport no mobile */
         height: 100vh; 
-        overflow: hidden; 
+        overflow: hidden; /* Evita rolagem do body */
     }
 
     #chat-container {
-        /* Ocupa o espaço restante da altura, garantindo que o disclaimer e input caibam */
-        flex-grow: 1; 
-        height: auto; /* Permite que o flexbox calcule a altura */
+        /* Ocupa o espaço restante da altura */
+        height: 100%;
         width: 100%;
         max-width: none;
         border-radius: 0;
         box-shadow: none;
         margin-top: 0; 
+        flex-grow: 1; /* Permite crescer */
     }
     
     #input-area {
-        /* Garante que o input-area não tenha rolagem */
-        flex-shrink: 0; 
         padding: 10px 15px; 
     }
     
-    /* CORREÇÃO: Força o disclaimer a ser visível no rodapé */
     #disclaimer-bottom {
-        flex-shrink: 0; 
         padding: 10px 15px; 
         box-sizing: border-box; 
         max-width: none; 

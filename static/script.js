@@ -3,13 +3,13 @@ const messagesArea = document.getElementById('messages-area');
 const userInput = document.getElementById('user-input');
 const sendButton = document.getElementById('send-button');
 const resetButton = document.getElementById('reset-button');
-// NOVO: Referência ao wrapper do microfone
 const micWrapper = document.getElementById('mic-wrapper'); 
 const micIcon = document.getElementById('mic-icon'); 
 
 // --- Variável Global para o Histórico ---
 let chatHistory = []; 
 
+// NOME CORRIGIDO AQUI
 const initialMessage = "Olá! Eu sou a **Jady**, sua assistente de apoio do **Quebre o Ciclo**. Minha missão é te orientar sobre direitos, leis (como a Lei Maria da Penha) e locais de ajuda. Estou aqui para você. Como posso te ajudar hoje?";
 
 // Função para iniciar o chat
@@ -34,9 +34,8 @@ function addMessage(text, sender) {
     messageDiv.classList.add('message');
     messageDiv.classList.add(sender === 'user' ? 'user-message' : 'ia-message');
     
-    // Adiciona o processamento do Markdown para mensagens da IA
     if (sender === 'ia') {
-         // Simples substituição para markdown (ajuste conforme a necessidade do seu backend)
+         // Simples substituição para markdown
         const formattedText = text
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
             .replace(/\*(.*?)\*/g, '<em>$1</em>')
@@ -49,7 +48,8 @@ function addMessage(text, sender) {
     messagesArea.appendChild(messageDiv);
     messagesArea.scrollTop = messagesArea.scrollHeight;
     
-    if (!text.includes("... (A Força Feminina está a processar)")) {
+    // Adiciona ao histórico, exceto mensagens de processamento
+    if (!text.includes("... (A Jady está a processar)")) {
         chatHistory.push({
             "role": sender === 'user' ? 'user' : 'model',
             "parts": [{ "text": text }]
@@ -90,7 +90,7 @@ function startVoiceRecognition() {
     recognition.continuous = false; 
     recognition.lang = 'pt-BR'; 
     
-    // NOVO: Adiciona a classe para animação do círculo
+    // Aplica a classe para animação do círculo
     micWrapper.classList.add('recording');
     micIcon.style.color = 'var(--mic-active-color)';
 
@@ -99,7 +99,7 @@ function startVoiceRecognition() {
         userInput.value = transcript; 
         checkInput(); 
         
-        // NOVO: ENVIA A MENSAGEM AUTOMATICAMENTE APÓS A TRANSCRIÇÃO
+        // ENVIA A MENSAGEM AUTOMATICAMENTE APÓS A TRANSCRIÇÃO
         sendMessage(); 
     };
 
@@ -126,7 +126,6 @@ async function sendToBackend(userText) {
     const processingMessage = messagesArea.lastChild; 
     
     try {
-        // ... (código fetch para o backend, permanece o mesmo) ...
         const response = await fetch('/chat', {
             method: 'POST',
             headers: {
@@ -165,7 +164,7 @@ function sendMessage() {
     addMessage(userText, 'user');
     sendToBackend(userText);
     
-    // NOVO: Limpa o campo de input *após* o envio (mesmo para voz)
+    // Limpa o campo de input *após* o envio (mesmo para voz)
     userInput.value = '';
     checkInput(); 
 }
@@ -174,7 +173,6 @@ function sendMessage() {
 // --- Event Listeners e Inicialização ---
 sendButton.addEventListener('click', sendMessage);
 resetButton.addEventListener('click', resetChat); 
-// O Listener agora está no wrapper (nova div)
 micWrapper.addEventListener('click', startVoiceRecognition); 
 
 userInput.addEventListener('keypress', (e) => {
