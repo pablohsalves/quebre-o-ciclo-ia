@@ -3,35 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Admin Jady</title>
+    <title>Admin | Quebre o Ciclo</title>
     <style>
-        body { font-family: sans-serif; background-color: #f4f4f4; padding: 20px; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        h1 { color: #ff69b4; }
-        a.logout { color: #ff69b4; text-decoration: none; padding: 8px 15px; border: 1px solid #ff69b4; border-radius: 4px; }
-        a.logout:hover { background-color: #ff69b4; color: white; }
-        textarea { width: 100%; height: 300px; padding: 10px; border: 1px solid #ccc; box-sizing: border-box; resize: vertical;}
-        button[type="submit"] { background-color: #ff69b4; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; margin-top: 10px; }
-        .message-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; padding: 10px; border-radius: 4px; margin-bottom: 20px; }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            color: #343a40;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #ff69b4;
+            border-bottom: 2px solid #ff69b4;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        h2 {
+            color: #495057;
+            margin-top: 30px;
+            border-bottom: 1px dashed #ced4da;
+            padding-bottom: 5px;
+        }
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            box-sizing: border-box;
+            resize: vertical;
+            min-height: 250px;
+            font-family: monospace;
+            font-size: 0.9em;
+            background-color: #f1f1f1;
+        }
+        button {
+            background-color: #ff69b4;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #e65a9e;
+        }
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+        }
+        .alert-success {
+            color: #0f5132;
+            background-color: #d1e7dd;
+            border-color: #badbcc;
+        }
+        .logout-link {
+            float: right;
+            color: #dc3545;
+            text-decoration: none;
+            font-weight: bold;
+            transition: color 0.3s;
+        }
+        .logout-link:hover {
+            color: #a71d2a;
+        }
+        /* Estilo para a área de Logs */
+        .logs-area {
+            background-color: #333;
+            color: #e0e0e0;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            margin-bottom: 10px;
+        }
+        .logs-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+        }
+        .reset-button {
+             background-color: #dc3545;
+             margin-left: 10px;
+        }
+        .reset-button:hover {
+             background-color: #c82333;
+        }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>Painel de Administração da Jady</h1>
-        <a href="{{ url_for('admin_logout') }}" class="logout">Sair</a>
-    </div>
-    
-    {% if message %}
-        <div class="message-success">{{ message }}</div>
-    {% endif %}
 
-    <h2>Instruções do Sistema (Conhecimento Central)</h2>
-    
-    <p>Edite o texto abaixo para mudar a personalidade e as diretrizes de resposta da Jady. (Use Markdown para formatação).</p>
-    
-    <form method="POST">
-        <textarea name="system_instruction_text">{{ current_instruction }}</textarea>
-        <button type="submit">Salvar e Aplicar Novo Conhecimento</button>
-    </form>
+    <div class="container">
+        <a href="{{ url_for('admin_logout') }}" class="logout-link">Sair</a>
+        <h1>Painel de Administração | Jady</h1>
+
+        {% if message %}
+            <div class="alert alert-success">{{ message }}</div>
+        {% endif %}
+
+        <h2>1. Edição da Instrução do Sistema (Conhecimento da Jady)</h2>
+        <form method="POST">
+            <textarea name="knowledge">{{ system_instruction }}</textarea>
+            <button type="submit">Atualizar Instrução da Jady</button>
+        </form>
+
+        <h2>2. Logs de Conversa (logs.txt)</h2>
+        
+        <div class="logs-actions">
+            <form method="POST" onsubmit="return confirm('Tem certeza que deseja RESETAR os logs? Esta ação é irreversível.')">
+                <input type="hidden" name="reset_logs" value="1">
+                <button type="submit" class="reset-button">Resetar Logs</button>
+            </form>
+        </div>
+        
+        <textarea name="logs_content" class="logs-area" readonly>{{ logs_content }}</textarea>
+
+
+    </div>
 </body>
 </html>
