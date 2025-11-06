@@ -2,12 +2,13 @@
 :root {
     --bg-light: #fffafa; 
     --text-dark: #1f1f1f;
-    --brand-color: #ff69b4; /* Rosa Choque (Botões/Destaque) */
+    --brand-color: #ff69b4; 
     --ia-bubble: #f1f0f0; 
     --user-bubble: #ffbcd9; 
     --input-bg: #ffffff;
     --border-color: #e0e0e0;
-    --mic-active-color: #ff0000; /* Vermelho para gravação */
+    --mic-active-color: #ff0000; 
+    --footer-height: 100px; /* Altura estimada para o input + disclaimer */
 }
 
 body {
@@ -17,15 +18,17 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
+    /* Adiciona padding no body para compensar o rodapé fixo */
+    padding-bottom: var(--footer-height); 
     min-height: 100vh;
     margin: 0;
-    padding-bottom: 20px; 
 }
 
 #chat-container {
     width: 100%;
     max-width: 800px; 
-    height: 85vh; /* Altura padrão para desktop */
+    /* Altura definida pelo viewport menos o rodapé */
+    height: calc(100vh - var(--footer-height) - 40px); /* 40px é para o margin-top e padding-bottom do body */
     flex-grow: 0; 
     
     background-color: #ffffff;
@@ -37,7 +40,7 @@ body {
     margin-top: 20px; 
 }
 
-/* Área de Mensagens */
+/* Área de Mensagens (agora rola dentro do chat-container) */
 #messages-area {
     flex-grow: 1;
     padding: 20px;
@@ -90,14 +93,25 @@ body {
     margin-left: auto;
 }
 
-/* --- Área de Entrada (Campo de Texto e Botões) --- */
+/* --- Área de Rodapé FIXA (Input + Disclaimer) --- */
+/* Remove as áreas de input e disclaimer do fluxo normal do #chat-container */
+
+/* Container para agrupar Input e Disclaimer e fixá-los */
+#footer-fixed-container {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    max-width: 800px; /* Garante que não exceda o chat-container */
+    background-color: var(--bg-light); /* Fundo para cobrir o conteúdo do chat */
+    z-index: 100;
+    padding-bottom: 10px; /* Espaçamento inferior final */
+}
+
 #input-area {
-    padding: 15px 20px;
-    background-color: var(--input-bg);
-    border-top: none; 
+    padding: 15px 20px 5px; /* Ajuste para o disclaimer caber */
+    background-color: transparent; /* Transparente para usar o fundo do fixed-container */
     flex-shrink: 0; 
-    /* AJUSTE DESKTOP: Adiciona uma margem inferior para separar do disclaimer */
-    margin-bottom: 5px; 
+    margin-bottom: 0; 
 }
 
 #input-box-wrapper {
@@ -124,7 +138,7 @@ body {
     color: #a0a0a0;
 }
 
-/* Wrapper para o Microfone */
+/* Microfone e Botão de Envio (Estilos permanecem os mesmos) */
 #mic-wrapper {
     position: relative;
     display: flex;
@@ -135,16 +149,12 @@ body {
     cursor: pointer;
     margin-right: 10px;
 }
-
-/* Ícone de Microfone */
 #mic-icon {
     color: var(--brand-color);
     font-size: 1.2em;
     z-index: 2; 
     transition: color 0.2s;
 }
-
-/* Elemento do Círculo Pulsante */
 #mic-wrapper.recording::before {
     content: '';
     position: absolute;
@@ -159,8 +169,6 @@ body {
     animation: pulse-circle 1.5s infinite ease-out;
     z-index: 1;
 }
-
-/* Botão de Envio */
 #send-button {
     background-color: var(--brand-color);
     color: white;
@@ -176,12 +184,9 @@ body {
     margin-left: 5px;
     transition: background-color 0.2s, opacity 0.2s;
 }
-
 #send-button:hover {
     background-color: #d11352;
 }
-
-/* Estilo para botão desabilitado */
 #send-button:disabled {
     opacity: 0.5;
     cursor: default;
@@ -191,13 +196,13 @@ body {
     background-color: var(--brand-color);
 }
 
+
 /* Disclaimer Abaixo do Chat */
 #disclaimer-bottom {
     font-size: 0.85em;
     color: #6c757d; 
     text-align: center;
-    /* AJUSTE DESKTOP: Aumenta o padding superior para separação */
-    padding: 15px 0; 
+    padding: 0 20px 5px; /* Ajuste para centralizar bem */
     max-width: 800px; 
     width: 100%; 
     flex-shrink: 0;
@@ -226,27 +231,32 @@ body {
         padding: 0;
         margin: 0;
         height: 100vh; 
-        overflow: hidden; 
+        overflow: hidden; /* O body não rola mais */
     }
-
+    
     #chat-container {
-        height: 100%;
         width: 100%;
         max-width: none;
         border-radius: 0;
         box-shadow: none;
         margin-top: 0; 
-        flex-grow: 1; 
+        height: 100%; /* Ocupa a altura total da tela */
+        /* O padding-bottom do body lida com o espaço do rodapé */
+    }
+
+    /* O container fixo deve ocupar a largura total do viewport no mobile */
+    #footer-fixed-container {
+        max-width: 100%; 
+        width: 100%;
+        left: 0; /* Fixa na esquerda para cobrir a tela */
     }
     
     #input-area {
-        padding: 10px 15px; 
-        margin-bottom: 0; /* Remove margem inferior no mobile */
+        padding: 10px 15px 5px; 
     }
     
     #disclaimer-bottom {
-        padding: 10px 15px; 
+        padding: 0 15px 5px; 
         box-sizing: border-box; 
-        max-width: none; 
     }
 }
