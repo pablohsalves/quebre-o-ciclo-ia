@@ -94,7 +94,8 @@ body {
 #input-area {
     padding: 15px 20px;
     background-color: var(--input-bg);
-    border-top: 1px solid var(--border-color);
+    /* CORREÇÃO 1: REMOÇÃO DA BORDA SUPERIOR */
+    border-top: none; 
 }
 
 #input-box-wrapper {
@@ -190,7 +191,7 @@ body {
     animation: pulse 1s infinite;
 }
 
-/* --- NOVO: Correção Responsiva para Mobile --- */
+/* --- Correção Responsiva (Mobile) --- */
 @media (max-width: 850px) {
     body {
         padding: 0;
@@ -204,8 +205,13 @@ body {
         border-radius: 0;
         box-shadow: none;
     }
-
-    /* Garante que o disclaimer quebre as linhas corretamente */
+    
+    /* CORREÇÃO 2: Ajuste o padding da input area no mobile */
+    #input-area {
+        padding: 10px; /* Reduz o padding para maximizar a área de input */
+    }
+    
+    /* CORREÇÃO 3: Garante que o disclaimer não cause rolagem */
     #disclaimer-bottom {
         padding: 10px 15px; 
         box-sizing: border-box; 
