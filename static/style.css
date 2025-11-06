@@ -13,8 +13,7 @@ body {
 
 #chat-container {
     max-width: 800px;
-    margin: 0px auto 0; /* Centraliza horizontalmente e remove margem superior */
-    /* CORREÇÃO: Remove fundo branco e contorno (shadow e border-radius) do container principal */
+    margin: 0px auto 0; 
     background: transparent;
     border-radius: 0; 
     box-shadow: none; 
@@ -34,13 +33,11 @@ body {
     scroll-behavior: smooth;
     min-height: 400px; 
     position: relative;
-    /* Fundo da área de mensagens igual ao fundo da página (como solicitado) */
     background-color: #e9ecef; 
-    /* Padding inferior ajustado */
     padding-bottom: 30px; 
 }
 
-/* Botão de Reset (Mantido) */
+/* Botão de Reset */
 #reset-button {
     position: absolute;
     top: 10px;
@@ -50,8 +47,9 @@ body {
     font-size: 1.2em;
     padding: 5px;
     z-index: 10;
-    background-color: rgba(233, 236, 239, 0.8); /* Fundo sutil */
+    background-color: rgba(233, 236, 239, 0.8); 
     border-radius: 50%;
+    transition: background-color 0.2s;
 }
 
 /* --- Estilos das Mensagens --- */
@@ -69,16 +67,43 @@ body {
     text-align: right;
     border-bottom-right-radius: 0;
 }
-/* Mensagens da Jady - Fundo sutil para destacá-las */
 .ai-message {
     background-color: #ffffff; 
     color: #343a40;
     margin-right: auto;
     text-align: left;
     border-bottom-left-radius: 0;
-    /* CORREÇÃO: Removeu a shadow, mantém a cor de fundo clara */
     box-shadow: none; 
 }
+
+/* Indicador de Digitação */
+.typing-indicator {
+    animation: blink 1s infinite;
+}
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+}
+
+/* Feedback Buttons */
+.feedback-buttons {
+    margin-top: 5px;
+    font-size: 0.9em;
+    text-align: right;
+}
+.ai-message .feedback-buttons {
+    text-align: left;
+}
+.feedback-buttons i {
+    cursor: pointer;
+    margin-left: 8px;
+    color: #6c757d;
+    transition: color 0.1s;
+}
+.feedback-buttons i:hover {
+    color: #343a40;
+}
+
 
 /* --- Área de Input Fixa (Footer) --- */
 #footer-fixed-container {
@@ -88,12 +113,9 @@ body {
     transform: translateX(-50%);
     width: 100%;
     max-width: 800px; 
-    /* CORREÇÃO: Fundo do footer igual ao fundo da página, sem bordas/sombras */
     background: #e9ecef;
     padding: 10px 20px 0; 
     box-shadow: none;
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
     z-index: 50; 
 }
 
@@ -106,7 +128,7 @@ body {
     border: 1px solid #ced4da;
     border-radius: 25px; 
     margin-bottom: 5px; 
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); /* Sombra suave para o wrapper */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); 
     height: 45px; 
 }
 
@@ -122,15 +144,19 @@ body {
 
 /* Microfone e Envio (Espaçamento) */
 #mic-wrapper {
-    /* Espaçamento grande entre microfone e envio */
     padding: 0 20px 0 10px; 
     display: flex;
     align-items: center;
+    justify-content: center; /* Centraliza o ícone */
     cursor: pointer;
     color: #ff69b4; 
     font-size: 1.1em;
     flex-shrink: 0;
-    transition: all 0.3s ease; /* Adiciona transição para o efeito de pulsação */
+    transition: all 0.3s ease; 
+    
+    /* Garante o tamanho padrão para ser substituído pelo .listening */
+    width: 35px; 
+    height: 35px;
 }
 #send-button {
     background-color: #ff69b4;
@@ -148,7 +174,7 @@ body {
     margin-right: 5px; 
 }
 
-/* Disclaimer - CORREÇÃO: Remove a borda/contorno ao redor */
+/* Disclaimer */
 #disclaimer-bottom {
     font-size: 0.75em;
     color: #6c757d;
@@ -156,7 +182,7 @@ body {
     padding: 5px 0 10px; 
 }
 
-/* --- Botões Flutuantes (Pânico e Dark Mode) - POSICIONAMENTO CRÍTICO --- */
+/* --- Botões Flutuantes (Pânico e Dark Mode) --- */
 #panic-button {
     position: fixed;
     top: 20px;
@@ -172,7 +198,7 @@ body {
     cursor: pointer;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
     font-size: 1.5em;
-    z-index: 1000; /* Garante que fique visível sobre tudo */
+    z-index: 1000; 
 }
 
 #dark-mode-toggle {
@@ -191,9 +217,12 @@ body {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     font-size: 1.5em;
     z-index: 999;
+    transition: background-color 0.3s, color 0.3s;
 }
 
-/* --- NOVO: ESTILOS PARA MICROFONE ATIVO (PULSANTE) --- */
+/* ------------------------------------------- */
+/* --- NOVOS ESTILOS REFORÇADOS MICROFONE ATIVO --- */
+/* ------------------------------------------- */
 
 /* Define a animação de pulsação */
 @keyframes pulse {
@@ -210,31 +239,33 @@ body {
 
 /* Estilo para o microfone quando está ATIVO (Ouvindo) */
 #mic-wrapper.listening {
-    color: white; /* Muda a cor do ícone para branco para se destacar no fundo vermelho */
-    background-color: #dc3545; /* Fundo vermelho sólido */
+    color: white !important; /* FORÇA O ÍCONE A FICAR BRANCO */
+    background-color: #dc3545 !important; /* FORÇA O FUNDO VERMELHO */
     border-radius: 50%;
-    width: 35px; /* Define um tamanho fixo para o círculo */
+    width: 35px; 
     height: 35px;
+    
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
     padding: 0;
-    /* Ajusta a margem para compensar o tamanho do ícone */
-    margin-right: 15px; 
     
     /* Aplica o efeito de pulsação */
     animation: pulse 1.5s infinite;
+    /* Ajuste de margem (se houver padding extra) */
+    margin-right: 15px;
 }
 
 /* Garante que o ícone do microfone esteja centralizado dentro do wrapper */
 #mic-wrapper.listening i {
     position: relative;
     z-index: 2;
+    color: white !important; /* REFORÇA A COR BRANCA DO ÍCONE */
 }
 
 
-/* --- Estilos do Modo Escuro (DARK MODE) (Corrigido) --- */
+/* --- Estilos do Modo Escuro (DARK MODE) --- */
 body.dark-mode {
     background-color: #121212; 
     color: #f1f1f1; 

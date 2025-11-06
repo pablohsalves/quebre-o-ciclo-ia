@@ -2,7 +2,6 @@
 let chatHistory = [];
 let lastUserPrompt = "";
 let lastAiResponseText = "";
-// Lemos o estado salvo do Dark Mode
 let isDarkMode = localStorage.getItem('darkMode') === 'enabled'; 
 
 // --- Elementos DOM ---
@@ -14,7 +13,7 @@ const panicButton = document.getElementById('panic-button');
 const darkModeToggle = document.getElementById('dark-mode-toggle');
 const micWrapper = document.getElementById('mic-wrapper'); 
 
-// --- Configuração do Reconhecimento de Voz (Mantido) ---
+// --- Configuração do Reconhecimento de Voz ---
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null;
 let isListening = false;
@@ -26,30 +25,31 @@ if (SpeechRecognition) {
 
     recognition.onstart = function() {
         isListening = true;
-        micWrapper.style.color = 'red';
-        userInput.placeholder = 'Ouvindo...';
+        micWrapper.classList.add('listening'); // ADICIONA A CLASSE PARA O EFEITO VISUAL
+        userInput.placeholder = 'Ouvindo... Clique para parar.'; 
     };
 
     recognition.onresult = function(event) {
         const transcript = event.results[0][0].transcript;
         userInput.value = transcript;
-        sendMessage();
+        sendMessage(); 
+        // O recognition.stop() é chamado implicitamente após o resultado.
+        // O onend será chamado em seguida para limpar os estados.
     };
 
     recognition.onerror = function(event) {
         console.error('Erro de reconhecimento de voz:', event.error);
-        userInput.placeholder = 'Fale com a Jady...';
-        micWrapper.style.color = '#ff69b4'; 
-        isListening = false;
-        alert(`Erro de Microfone: ${event.error}. Verifique se as permissões estão ativadas e se você está usando HTTPS.`);
+        // Garante que a gravação pare em caso de erro.
+        if (isListening) {
+             recognition.stop(); 
+        }
     };
 
     recognition.onend = function() {
-        if (isListening) {
-             micWrapper.style.color = '#ff69b4';
-             userInput.placeholder = 'Fale com a Jady...';
-             isListening = false;
-        }
+        // ESSA FUNÇÃO É CRÍTICA E GARANTE A LIMPEZA VISUAL
+        isListening = false;
+        micWrapper.classList.remove('listening'); // REMOVE A CLASSE DO EFEITO VISUAL
+        userInput.placeholder = 'Fale com a Jady...';
     };
 } else {
     if (micWrapper) {
@@ -58,12 +58,20 @@ if (SpeechRecognition) {
     }
 }
 
-function startListening() {
-    if (recognition && !isListening) {
+// FUNÇÃO TOGGLE REFORÇADA: Controla o LIGA/DESLIGA e o clique para PARAR
+function toggleListening() {
+    if (!recognition) return;
+
+    if (isListening) {
+        // Se estiver ouvindo (circulo vermelho), um clique deve PARAR a gravação.
+        // O onend será chamado em seguida para limpar o estado.
+        recognition.stop();
+    } else {
+        // Se não estiver ouvindo, começa a gravação.
         try {
             recognition.start();
         } catch (e) {
-            console.error('Reconhecimento de voz já iniciado ou erro:', e);
+            console.error('Reconhecimento de voz já iniciado ou erro ao tentar iniciar:', e);
         }
     }
 }
@@ -161,11 +169,7 @@ function resetChat() {
 
 
 // --- Funções UX/Acessibilidade (Modo Escuro) ---
-
-// Função auxiliar para aplicar o modo e o ícone
 function applyDarkMode(enable) {
-    // É seguro chamar estas funções mesmo que darkModeToggle seja null por um instante,
-    // mas o listener garantirá que ele existe quando o clique ocorrer.
     if (!darkModeToggle) return; 
     
     const icon = darkModeToggle.querySelector('i');
@@ -191,13 +195,8 @@ function handlePanicClick() {
 }
 
 function initializeApp() {
-    // 1. Aplica o modo escuro salvo imediatamente (antes de listeners)
     applyDarkMode(isDarkMode);
-    
-    // 2. Adiciona a mensagem inicial da Jady
     addInitialMessage();
-    
-    // 3. Define o foco inicial
     userInput.focus();
 }
 
@@ -209,7 +208,6 @@ function addInitialMessage() {
 
 
 // --- Event Listeners ---
-// Reforça a adição dos listeners após o DOM estar pronto
 document.addEventListener('DOMContentLoaded', () => {
     // Funções principais
     sendButton.addEventListener('click', sendMessage);
@@ -224,9 +222,9 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error("Erro: O elemento darkModeToggle não foi encontrado no DOM.");
     }
     
-    // Listener para o microfone
+    // Listener ATUALIZADO para o microfone
     if (micWrapper) {
-        micWrapper.addEventListener('click', startListening);
+        micWrapper.addEventListener('click', toggleListening);
     }
     
     // Listener do Enter
